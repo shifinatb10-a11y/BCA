@@ -40,17 +40,6 @@ export function Gallery({ galleryList, filter, setFilter, setViewer, canManageMe
           </button>
         ))}
       </div>
-
-      <section className="gallery-cta">
-        <span className="camera-icon"><Icon name="image" size={23} /></span>
-        <div>
-          <h3>Have a moment to share?</h3>
-          <p>Super admins and Media admins can add pictures directly to the public gallery.</p>
-        </div>
-        {canManageMedia && (
-          <Button variant="outline" onClick={onOpenAddPhoto} icon="plus">Add gallery photo</Button>
-        )}
-      </section>
     </div>
   )
 }

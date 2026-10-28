@@ -286,7 +286,21 @@ export function StudyZone({
                 <PaperRow key={paper.id || `${paper.subject}-${paper.year}`} subject={paper.subject} year={paper.year} semester={paper.semester || semester} />
               ))
             ) : (
-              <p style={{ color: '#94a3b8', fontSize: '12px', padding: '12px 0' }}>No past papers uploaded yet for {selectedSubject} in {semester}.</p>
+              <div
+                style={{
+                  width: '100%',
+                  padding: '24px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '13px',
+                  minHeight: '72px',
+                }}
+              >
+                No past papers uploaded yet for {selectedSubject} in {semester}.
+              </div>
             )}
           </div>
         </section>

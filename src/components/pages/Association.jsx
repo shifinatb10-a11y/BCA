@@ -125,29 +125,6 @@ export function Association({
           ))}
         </div>
       </section>
-
-      <section className="finance-callout">
-        <div className="finance-lock"><Icon name="shield" size={22} /></div>
-        <div>
-          <div className="eyebrow"><span className="eyebrow-line" />Private workspace</div>
-          <h3>Association finance</h3>
-          <p>Transactions, statements, and budgets are visible to authorised association, finance, and super admins.</p>
-        </div>
-        {canViewFinance ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', flexWrap: 'wrap' }}>
-            <div className="finance-callout-stats">
-              <span className="finance-stat-pill income">Income: {formatCurr(totalIncome)}</span>
-              <span className="finance-stat-pill expense">Expense: {formatCurr(totalExpense)}</span>
-              <span className="finance-stat-pill balance">Balance: {formatCurr(balance)}</span>
-            </div>
-            <Button variant="outline" icon="shield" onClick={onOpenFinanceModal}>
-              View Statements
-            </Button>
-          </div>
-        ) : (
-          <span className="private-badge"><Icon name="lock" size={13} /> Admin only</span>
-        )}
-      </section>
     </div>
   )
 }
