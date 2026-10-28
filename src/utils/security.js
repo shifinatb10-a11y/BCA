@@ -162,6 +162,34 @@ export const rolePermissions = {
   },
 }
 
+export const normalizeRole = (role) => {
+  if (!role) return 'Department'
+  const clean = String(role).trim().toLowerCase().replace(/[._-]/g, ' ')
+
+  if (clean.includes('super') || clean === 'admin' || clean.includes('principal') || clean.includes('head')) {
+    return 'Super admin'
+  }
+  if (clean.includes('dept') || clean.includes('faculty') || clean.includes('hod') || clean.includes('teacher') || clean.includes('student')) {
+    return 'Department'
+  }
+  if (clean.includes('assoc')) {
+    return 'Association'
+  }
+  if (clean.includes('club')) {
+    return 'Club'
+  }
+  if (clean.includes('study') || clean.includes('academic') || clean.includes('syllabus') || clean.includes('quiz') || clean.includes('paper')) {
+    return 'Study zone'
+  }
+  if (clean.includes('finance') || clean.includes('treasur') || clean.includes('account')) {
+    return 'Finance'
+  }
+  if (clean.includes('media') || clean.includes('gallery') || clean.includes('photo')) {
+    return 'Media'
+  }
+  return 'Department'
+}
+
 export const getAdminUsersList = () => {
   return loadStorage('admin_users_list', initialAdminUsers)
 }
@@ -178,8 +206,8 @@ export const verifyCredentials = (role, email, password) => {
   const cleanEmail = email.trim().toLowerCase()
   const cleanPass = password.trim()
 
-  // Match admin by email
-  const account = currentAdmins.find((a) => a.email.toLowerCase() === cleanEmail)
+  // Match admin by email or name
+  const account = currentAdmins.find((a) => a.email.toLowerCase() === cleanEmail || a.name.toLowerCase() === cleanEmail)
   if (!account) {
     return { success: false, message: 'No registered admin account found with this email address.' }
   }
@@ -192,7 +220,7 @@ export const verifyCredentials = (role, email, password) => {
         success: true,
         session: {
           id: account.id,
-          role: account.role,
+          role: normalizeRole(account.role),
           email: account.email,
           name: account.name,
           signedAt: Date.now(),

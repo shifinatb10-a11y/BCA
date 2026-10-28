@@ -5,7 +5,7 @@ import { FinanceSummaryCards } from './FinanceSummaryCards'
 import { StudentManager } from './StudentManager'
 import { AdminPages } from './AdminPages'
 import { asset } from '../../utils/storage'
-import { rolePermissions } from '../../utils/security'
+import { rolePermissions, normalizeRole } from '../../utils/security'
 
 export function AdminPanel({
   session,
@@ -36,22 +36,23 @@ export function AdminPanel({
   onDeleteBatch,
   onResetDefaults,
 }) {
-  const isSuper = session.role === 'Super admin'
-  const isAssocAdmin = session.role === 'Association'
+  const currentRole = normalizeRole(session?.role)
+  const isSuper = currentRole === 'Super admin'
+  const isAssocAdmin = currentRole === 'Association'
 
   // Dynamic tabs strictly based on role
   const tabs = useMemo(() => {
     if (isSuper) {
       return ['Overview', 'Events', 'Department', 'Association', 'Club', 'Study zone', 'Gallery', 'Students', 'Finance', 'Admins', 'Pages']
     }
-    if (session.role === 'Department') return ['Overview', 'Department', 'Students']
-    if (session.role === 'Association') return ['Overview', 'Association']
-    if (session.role === 'Club') return ['Overview', 'Club']
-    if (session.role === 'Study zone') return ['Overview', 'Study zone']
-    if (session.role === 'Media') return ['Overview', 'Gallery']
-    if (session.role === 'Finance') return ['Overview', 'Finance']
+    if (currentRole === 'Department') return ['Overview', 'Department', 'Students']
+    if (currentRole === 'Association') return ['Overview', 'Association']
+    if (currentRole === 'Club') return ['Overview', 'Club']
+    if (currentRole === 'Study zone') return ['Overview', 'Study zone']
+    if (currentRole === 'Media') return ['Overview', 'Gallery']
+    if (currentRole === 'Finance') return ['Overview', 'Finance']
     return ['Overview']
-  }, [isSuper, session.role])
+  }, [isSuper, currentRole])
 
   const [adminTab, setAdminTab] = useState('Overview')
   const [studySubtab, setStudySubtab] = useState('subjects') // 'subjects' | 'syllabus' | 'papers' | 'quizzes'
@@ -115,10 +116,10 @@ export function AdminPanel({
         </div>
 
         <div className="admin-user">
-          <span className="admin-user-avatar">{session.role.slice(0, 1)}</span>
+          <span className="admin-user-avatar">{currentRole.slice(0, 1)}</span>
           <div>
             <strong>{session.name}</strong>
-            <span><i /> {session.role} · Active</span>
+            <span><i /> {currentRole} · Active</span>
           </div>
         </div>
 
@@ -161,7 +162,7 @@ export function AdminPanel({
       <section className="admin-main">
         <div className="admin-main-header">
           <div>
-            <span className="eyebrow"><span className="eyebrow-line" />{session.role} workspace</span>
+            <span className="eyebrow"><span className="eyebrow-line" />{currentRole} workspace</span>
             <h2>{adminTab === 'Overview' ? `Welcome, ${session.name}` : `${adminTab} Management`}</h2>
           </div>
           <div className="admin-secure">
@@ -182,40 +183,40 @@ export function AdminPanel({
                   <div><span>Admin Accounts</span><strong>{adminUsersList.length}</strong><small>Role authorized</small></div>
                 </>
               )}
-              {session.role === 'Department' && (
+              {currentRole === 'Department' && (
                 <>
                   <div><span>Faculty Members</span><strong>{facultyList.length}</strong><small>Teaching staff</small></div>
                   <div><span>Registered Students</span><strong>{studentsList.length}</strong><small>BCA Batches</small></div>
                   <div><span>Active Batches</span><strong>{batches.length}</strong><small>Academic cohorts</small></div>
                 </>
               )}
-              {session.role === 'Association' && (
+              {currentRole === 'Association' && (
                 <>
                   <div><span>Association Tenures</span><strong>{associationsList.length}</strong><small>Year-to-year records</small></div>
                   <div><span>Annual Reports</span><strong>{reportsList.length}</strong><small>Document archive</small></div>
                   <div><span>Active Balance</span><strong>{financeList[0]?.amount || '₹28,500'}</strong><small>Audited statements</small></div>
                 </>
               )}
-              {session.role === 'Club' && (
+              {currentRole === 'Club' && (
                 <>
                   <div><span>Tech Club Events</span><strong>{clubEventsList.length}</strong><small>Workshops & bootcamps</small></div>
                   <div><span>Club Identity</span><strong>{clubInfo.name}</strong><small>Est. {clubInfo.estYear}</small></div>
                 </>
               )}
-              {session.role === 'Study zone' && (
+              {currentRole === 'Study zone' && (
                 <>
                   <div><span>Syllabus Modules</span><strong>{syllabusList.length}</strong><small>Across semesters</small></div>
                   <div><span>Question Papers</span><strong>{papersList.length}</strong><small>Past university exams</small></div>
                   <div><span>Practice Quizzes</span><strong>{quizList.length}</strong><small>Interactive questions</small></div>
                 </>
               )}
-              {session.role === 'Media' && (
+              {currentRole === 'Media' && (
                 <>
                   <div><span>Gallery Photos</span><strong>{galleryList.length}</strong><small>Campus media moments</small></div>
                   <div><span>Photo Albums</span><strong>3</strong><small>Events, Tech & Campus</small></div>
                 </>
               )}
-              {session.role === 'Finance' && (
+              {currentRole === 'Finance' && (
                 <>
                   <div><span>Total Records</span><strong>{financeList.length}</strong><small>Ledger entries</small></div>
                   <div><span>Audited Accounts</span><strong>100%</strong><small>Compliant</small></div>
@@ -226,11 +227,11 @@ export function AdminPanel({
             <div className="admin-welcome-card">
               <div>
                 <span className="eyebrow light"><span className="eyebrow-line" />Live Portal Controls</span>
-                <h3>{isSuper ? 'Superadmin Authority' : `${session.role} Workspace`}<br /><em>Enabled.</em></h3>
+                <h3>{isSuper ? 'Superadmin Authority' : `${currentRole} Workspace`}<br /><em>Enabled.</em></h3>
                 <p>
                   {isSuper
                     ? 'You have complete control to add, edit, or delete events, faculty, associations, club branding, semester syllabus, past papers, gallery photos, and admin accounts.'
-                    : `Manage ${session.role.toLowerCase()} sections and keep your student community informed.`}
+                    : `Manage ${currentRole.toLowerCase()} sections and keep your student community informed.`}
                 </p>
               </div>
               <div className="admin-ring">
@@ -264,7 +265,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Department' && (
+                {currentRole === 'Department' && (
                   <>
                     <button onClick={() => onOpenModal('faculty', null)}>
                       <Icon name="building" size={19} />
@@ -278,7 +279,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Association' && (
+                {currentRole === 'Association' && (
                   <>
                     <button onClick={() => onOpenModal('association', null)}>
                       <Icon name="users" size={19} />
@@ -292,7 +293,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Club' && (
+                {currentRole === 'Club' && (
                   <>
                     <button onClick={() => onOpenModal('clubEvent', null)}>
                       <Icon name="spark" size={19} />
@@ -301,7 +302,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Study zone' && (
+                {currentRole === 'Study zone' && (
                   <>
                     <button onClick={() => onOpenModal('syllabus', null)}>
                       <Icon name="book" size={19} />
@@ -320,7 +321,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Media' && (
+                {currentRole === 'Media' && (
                   <>
                     <button onClick={() => onOpenModal('gallery', null)}>
                       <Icon name="image" size={19} />
@@ -329,7 +330,7 @@ export function AdminPanel({
                     </button>
                   </>
                 )}
-                {session.role === 'Finance' && (
+                {currentRole === 'Finance' && (
                   <>
                     <button onClick={() => onOpenModal('finance', null)}>
                       <Icon name="shield" size={19} />

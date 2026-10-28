@@ -21,7 +21,7 @@ import {
 
 // Utilities & Security
 import { loadStorage, saveStorage } from './utils/storage'
-import { verifyCredentials, initBrowserSecurity, getAdminUsersList, saveAdminUsersList } from './utils/security'
+import { verifyCredentials, initBrowserSecurity, getAdminUsersList, saveAdminUsersList, normalizeRole } from './utils/security'
 import {
   fetchAllSupabaseData,
   signInWithSupabase,
@@ -59,7 +59,13 @@ export function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
   const [adminRole, setAdminRole] = useState('Super admin')
-  const [session, setSession] = useState(() => loadStorage('session', null))
+  const [session, setSession] = useState(() => {
+    const s = loadStorage('session', null)
+    if (s && s.role) {
+      return { ...s, role: normalizeRole(s.role) }
+    }
+    return s
+  })
   const [toast, setToast] = useState('')
   const [semester, setSemester] = useState('Sem 1')
   const [selectedSubject, setSelectedSubject] = useState('MFC')
@@ -214,7 +220,7 @@ export function App() {
     try {
       const supaRes = await signInWithSupabase(email, pass)
       if (supaRes.success) {
-        const finalRole = supaRes.session.role || role
+        const finalRole = normalizeRole(supaRes.session.role || role || email)
         const sessionData = { ...supaRes.session, role: finalRole }
         setSession(sessionData)
         saveStorage('session', sessionData)
@@ -228,11 +234,13 @@ export function App() {
     // 2. Fallback to verified local role credentials
     const res = verifyCredentials(role, email, pass)
     if (res.success) {
-      setSession(res.session)
-      saveStorage('session', res.session)
+      const finalRole = normalizeRole(res.session.role || role)
+      const sessionData = { ...res.session, role: finalRole }
+      setSession(sessionData)
+      saveStorage('session', sessionData)
       setLoginOpen(false)
       setAdminOpen(true)
-      showToast(`Welcome, ${res.session.name} (${role})`)
+      showToast(`Welcome, ${sessionData.name} (${finalRole})`)
       return { success: true }
     }
     return { success: false, message: res.message }
@@ -563,12 +571,13 @@ export function App() {
   const visibleNav = navItems.filter((item) => visiblePages.includes(item.id))
 
   // Permissions helpers
-  const canManageDept = session && (session.role === 'Department' || session.role === 'Super admin')
-  const canManageStudy = session && (session.role === 'Study zone' || session.role === 'Super admin')
-  const canManageAssoc = session && (session.role === 'Association' || session.role === 'Super admin')
-  const canManageClub = session && (session.role === 'Club' || session.role === 'Super admin')
-  const canManageMedia = session && (session.role === 'Media' || session.role === 'Super admin')
-  const canViewFinance = session && (session.role === 'Finance' || session.role === 'Association' || session.role === 'Super admin')
+  const sessionRole = normalizeRole(session?.role)
+  const canManageDept = session && (sessionRole === 'Department' || sessionRole === 'Super admin')
+  const canManageStudy = session && (sessionRole === 'Study zone' || sessionRole === 'Super admin')
+  const canManageAssoc = session && (sessionRole === 'Association' || sessionRole === 'Super admin')
+  const canManageClub = session && (sessionRole === 'Club' || sessionRole === 'Super admin')
+  const canManageMedia = session && (sessionRole === 'Media' || sessionRole === 'Super admin')
+  const canViewFinance = session && (sessionRole === 'Finance' || sessionRole === 'Association' || sessionRole === 'Super admin')
 
   return (
     <div className="app-shell">
@@ -674,7 +683,7 @@ export function App() {
         <FinanceViewerModal
           financeList={financeList}
           onClose={() => setFinanceViewerOpen(false)}
-          isReadOnly={session?.role === 'Association'}
+          isReadOnly={sessionRole === 'Association'}
         />
       )}
 

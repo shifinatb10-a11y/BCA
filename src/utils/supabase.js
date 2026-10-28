@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { normalizeRole } from './security'
 
 const getEnv = (key, fallback = '') => {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
@@ -43,7 +44,7 @@ export const signInWithSupabase = async (email, password) => {
     }
 
     const user = data.user
-    let role = user?.user_metadata?.role || 'Super admin'
+    let role = user?.user_metadata?.role || user?.app_metadata?.role || ''
 
     // Check if role is recorded in admin_users table
     try {
@@ -58,10 +59,17 @@ export const signInWithSupabase = async (email, password) => {
       }
     } catch (e) {}
 
+    // Fallback: derive from email username if role is still empty
+    if (!role) {
+      role = email.split('@')[0]
+    }
+
+    const canonicalRole = normalizeRole(role)
+
     return {
       success: true,
       session: {
-        role,
+        role: canonicalRole,
         email: user.email,
         name: user?.user_metadata?.full_name || email.split('@')[0],
         id: user.id,

@@ -1,5 +1,6 @@
 import { Icon } from '../common/Icon'
 import { asset } from '../../utils/storage'
+import { normalizeRole } from '../../utils/security'
 
 export function Sidebar({
   menuOpen,
@@ -40,7 +41,7 @@ export function Sidebar({
           {session ? (
             <button className="admin-link active" onClick={() => setAdminOpen(true)}>
               <span className="admin-avatar"><Icon name="shield" size={15} /></span>
-              <span>{session.role} studio</span>
+              <span>{normalizeRole(session.role)} studio</span>
               <Icon name="arrow" size={16} />
             </button>
           ) : (

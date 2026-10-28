@@ -1,5 +1,6 @@
 import { Icon } from '../common/Icon'
 import { navItems } from '../../data/navItems'
+import { normalizeRole } from '../../utils/security'
 
 export function Header({
   setMenuOpen,
@@ -21,7 +22,7 @@ export function Header({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button className="topbar-user-badge" onClick={() => setAdminOpen(true)}>
               <Icon name="shield" size={14} />
-              <span>{session.role}</span>
+              <span>{normalizeRole(session.role)}</span>
             </button>
             <button className="topbar-logout-btn" onClick={signOut} title="Sign out">
               Sign out
