@@ -17,7 +17,6 @@ export function Header({
         <strong>{navItems.find((item) => item.id === activePage)?.label || 'Dashboard'}</strong>
       </div>
       <div className="topbar-actions">
-        <div className="status-pill"><span className="status-dot" /> Admissions open <span className="status-year">2026</span></div>
         {session ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button className="topbar-user-badge" onClick={() => setAdminOpen(true)}>

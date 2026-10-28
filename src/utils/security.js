@@ -4,12 +4,21 @@ import { defaultAccounts } from '../data/accounts'
  * Validates role credentials safely without exposing plain text in global window state
  */
 export const verifyCredentials = (role, email, password) => {
-  const account = defaultAccounts[role]
-  if (!account) return { success: false, message: 'Invalid role selected.' }
+  let targetRole = role
+  let account = targetRole ? defaultAccounts[targetRole] : null
 
-  if (account.email.toLowerCase() !== email.trim().toLowerCase()) {
-    return { success: false, message: 'Email address does not match this department role.' }
+  // If role is omitted or doesn't match email, look up role by email
+  if (!account || account.email.toLowerCase() !== email.trim().toLowerCase()) {
+    const matchedRole = Object.keys(defaultAccounts).find(
+      (r) => defaultAccounts[r].email.toLowerCase() === email.trim().toLowerCase()
+    )
+    if (matchedRole) {
+      targetRole = matchedRole
+      account = defaultAccounts[matchedRole]
+    }
   }
+
+  if (!account) return { success: false, message: 'No registered department account found with this email.' }
 
   // Safe token verification
   try {
@@ -18,7 +27,7 @@ export const verifyCredentials = (role, email, password) => {
       return {
         success: true,
         session: {
-          role,
+          role: targetRole,
           email: account.email,
           name: account.name,
           signedAt: Date.now(),
