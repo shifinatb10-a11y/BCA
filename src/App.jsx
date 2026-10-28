@@ -21,7 +21,7 @@ import {
 
 // Utilities & Security
 import { loadStorage, saveStorage } from './utils/storage'
-import { verifyCredentials, initBrowserSecurity } from './utils/security'
+import { verifyCredentials, initBrowserSecurity, getAdminUsersList, saveAdminUsersList } from './utils/security'
 import {
   fetchAllSupabaseData,
   signInWithSupabase,
@@ -189,6 +189,7 @@ export function App() {
   const [studentsList, setStudentsList] = useState(() => loadStorage('students', defaultStudents))
   const [batches, setBatches] = useState(() => loadStorage('batches', defaultBatches))
   const [financeList, setFinanceList] = useState(() => loadStorage('finance', defaultFinance))
+  const [adminUsersList, setAdminUsersList] = useState(() => getAdminUsersList())
   const [visiblePages, setVisiblePages] = useState(() => loadStorage('visible_pages', navItems.map((item) => item.id)))
   const [galleryFilter, setGalleryFilter] = useState('All')
 
@@ -339,6 +340,16 @@ export function App() {
             file_url: item.fileUrl || '',
           })
         }
+      } else if (type === 'adminUser') {
+        if (isDelete) {
+          await supabase.from('admin_users').delete().eq('email', item.email || item.id)
+        } else {
+          await supabase.from('admin_users').upsert({
+            email: item.email,
+            role: item.role,
+            created_at: new Date().toISOString()
+          }, { onConflict: 'email' })
+        }
       }
     } catch (e) {
       console.warn('[Supabase Sync Notice]', e)
@@ -399,6 +410,12 @@ export function App() {
       const updated = financeList.some((i) => i.id === id) ? financeList.map((i) => (i.id === id ? finalItem : i)) : [finalItem, ...financeList]
       setFinanceList(updated)
       saveStorage('finance', updated)
+    } else if (type === 'adminUser') {
+      const updated = adminUsersList.some((i) => (i.id && i.id === id) || i.email === itemData.email)
+        ? adminUsersList.map((i) => ((i.id && i.id === id) || i.email === itemData.email ? finalItem : i))
+        : [...adminUsersList, finalItem]
+      setAdminUsersList(updated)
+      saveAdminUsersList(updated)
     }
 
     // Background sync to Supabase database
@@ -458,6 +475,10 @@ export function App() {
       const updated = financeList.filter((i) => i.id !== id)
       setFinanceList(updated)
       saveStorage('finance', updated)
+    } else if (type === 'adminUser') {
+      const updated = adminUsersList.filter((i) => i.id !== id && i.email !== id)
+      setAdminUsersList(updated)
+      saveAdminUsersList(updated)
     }
 
     // Background sync deletion to Supabase
@@ -542,9 +563,11 @@ export function App() {
   const visibleNav = navItems.filter((item) => visiblePages.includes(item.id))
 
   // Permissions helpers
+  const canManageDept = session && (session.role === 'Department' || session.role === 'Super admin')
   const canManageStudy = session && (session.role === 'Study zone' || session.role === 'Super admin')
   const canManageAssoc = session && (session.role === 'Association' || session.role === 'Super admin')
   const canManageClub = session && (session.role === 'Club' || session.role === 'Super admin')
+  const canManageMedia = session && (session.role === 'Media' || session.role === 'Super admin')
   const canViewFinance = session && (session.role === 'Finance' || session.role === 'Association' || session.role === 'Super admin')
 
   return (
@@ -571,7 +594,16 @@ export function App() {
         />
 
         {activePage === 'dashboard' && <Dashboard goTo={goTo} setViewer={setViewer} events={events} />}
-        {activePage === 'department' && <Department goTo={goTo} facultyList={facultyList} />}
+        {activePage === 'department' && (
+          <Department
+            goTo={goTo}
+            facultyList={facultyList}
+            canManageDept={canManageDept}
+            onOpenAddFaculty={() => setModalForm({ open: true, type: 'faculty', item: null })}
+            onEditFaculty={(fac) => setModalForm({ open: true, type: 'faculty', item: fac })}
+            onDeleteFaculty={(id, name) => handleDeleteItem('faculty', id, name)}
+          />
+        )}
         {activePage === 'association' && (
           <Association
             setViewer={setViewer}
@@ -594,6 +626,7 @@ export function App() {
             clubEventsList={clubEventsList}
             canManageClub={canManageClub}
             onOpenEditClub={() => { setAdminOpen(true); }}
+            onOpenAddClubEvent={() => setModalForm({ open: true, type: 'clubEvent', item: null })}
           />
         )}
         {activePage === 'study' && (
@@ -627,7 +660,7 @@ export function App() {
             filter={galleryFilter}
             setFilter={setGalleryFilter}
             setViewer={setViewer}
-            canManageMedia={session && (session.role === 'Media' || session.role === 'Super admin')}
+            canManageMedia={canManageMedia}
             onOpenAddPhoto={() => setModalForm({ open: true, type: 'gallery', item: null })}
           />
         )}
@@ -678,6 +711,7 @@ export function App() {
           quizList={quizList}
           studentsList={studentsList}
           financeList={financeList}
+          adminUsersList={adminUsersList}
           onOpenModal={(type, item) => setModalForm({ open: true, type, item })}
           onDeleteItem={handleDeleteItem}
           onDeleteBatch={handleDeleteBatch}

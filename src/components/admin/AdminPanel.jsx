@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Icon } from '../common/Icon'
 import { Button } from '../common/Button'
 import { FinanceSummaryCards } from './FinanceSummaryCards'
 import { StudentManager } from './StudentManager'
 import { AdminPages } from './AdminPages'
 import { asset } from '../../utils/storage'
+import { rolePermissions } from '../../utils/security'
 
 export function AdminPanel({
   session,
@@ -29,6 +30,7 @@ export function AdminPanel({
   quizList,
   studentsList,
   financeList,
+  adminUsersList = [],
   onOpenModal,
   onDeleteItem,
   onDeleteBatch,
@@ -37,14 +39,13 @@ export function AdminPanel({
   const isSuper = session.role === 'Super admin'
   const isAssocAdmin = session.role === 'Association'
 
-  // Dynamic tabs based on role
-  // Requirement: "association admins can view the finance page but not add or edit"
+  // Dynamic tabs strictly based on role
   const tabs = useMemo(() => {
     if (isSuper) {
-      return ['Overview', 'Events', 'Department', 'Association', 'Club', 'Study zone', 'Gallery', 'Students', 'Finance', 'Pages']
+      return ['Overview', 'Events', 'Department', 'Association', 'Club', 'Study zone', 'Gallery', 'Students', 'Finance', 'Admins', 'Pages']
     }
     if (session.role === 'Department') return ['Overview', 'Department', 'Students']
-    if (session.role === 'Association') return ['Overview', 'Association', 'Finance']
+    if (session.role === 'Association') return ['Overview', 'Association']
     if (session.role === 'Club') return ['Overview', 'Club']
     if (session.role === 'Study zone') return ['Overview', 'Study zone']
     if (session.role === 'Media') return ['Overview', 'Gallery']
@@ -56,6 +57,13 @@ export function AdminPanel({
   const [studySubtab, setStudySubtab] = useState('subjects') // 'subjects' | 'syllabus' | 'papers' | 'quizzes'
   const [assocSubtab, setAssocSubtab] = useState('associations') // 'associations' | 'reports'
   const [newBatch, setNewBatch] = useState('')
+
+  // Keep adminTab within authorized bounds
+  useEffect(() => {
+    if (!tabs.includes(adminTab)) {
+      setAdminTab('Overview')
+    }
+  }, [tabs, adminTab])
 
   // Local state for Club editor
   const [editClubName, setEditClubName] = useState(clubInfo.name)
@@ -130,6 +138,7 @@ export function AdminPanel({
               {tab === 'Gallery' && <Icon name="image" size={14} />}
               {tab === 'Students' && <Icon name="users" size={14} />}
               {tab === 'Finance' && <Icon name="shield" size={14} />}
+              {tab === 'Admins' && <Icon name="shield" size={14} />}
               {tab === 'Pages' && <Icon name="grid" size={14} />}
               <span>{tab}</span>
               <Icon name="arrow" size={14} />
@@ -138,9 +147,11 @@ export function AdminPanel({
         </nav>
 
         <div className="admin-panel-bottom">
-          <button onClick={onResetDefaults} title="Restore default demo data">
-            <Icon name="refresh" size={16} /> Reset
-          </button>
+          {isSuper && (
+            <button onClick={onResetDefaults} title="Restore default demo data">
+              <Icon name="refresh" size={16} /> Reset
+            </button>
+          )}
           <button onClick={onLogout} title="Sign out from portal">
             <Icon name="arrow" size={16} /> Sign out
           </button>
@@ -163,9 +174,53 @@ export function AdminPanel({
         {adminTab === 'Overview' && (
           <div className="admin-overview">
             <div className="admin-stat-grid">
-              <div><span>Upcoming Events</span><strong>{events.length}</strong><small>Live on dashboard</small></div>
-              <div><span>Faculty Members</span><strong>{facultyList.length}</strong><small>Teaching staff</small></div>
-              <div><span>Active Associations</span><strong>{associationsList.length}</strong><small>Multi-year records</small></div>
+              {isSuper && (
+                <>
+                  <div><span>Upcoming Events</span><strong>{events.length}</strong><small>Live on dashboard</small></div>
+                  <div><span>Faculty Members</span><strong>{facultyList.length}</strong><small>Teaching staff</small></div>
+                  <div><span>Active Associations</span><strong>{associationsList.length}</strong><small>Multi-year records</small></div>
+                  <div><span>Admin Accounts</span><strong>{adminUsersList.length}</strong><small>Role authorized</small></div>
+                </>
+              )}
+              {session.role === 'Department' && (
+                <>
+                  <div><span>Faculty Members</span><strong>{facultyList.length}</strong><small>Teaching staff</small></div>
+                  <div><span>Registered Students</span><strong>{studentsList.length}</strong><small>BCA Batches</small></div>
+                  <div><span>Active Batches</span><strong>{batches.length}</strong><small>Academic cohorts</small></div>
+                </>
+              )}
+              {session.role === 'Association' && (
+                <>
+                  <div><span>Association Tenures</span><strong>{associationsList.length}</strong><small>Year-to-year records</small></div>
+                  <div><span>Annual Reports</span><strong>{reportsList.length}</strong><small>Document archive</small></div>
+                  <div><span>Active Balance</span><strong>{financeList[0]?.amount || '₹28,500'}</strong><small>Audited statements</small></div>
+                </>
+              )}
+              {session.role === 'Club' && (
+                <>
+                  <div><span>Tech Club Events</span><strong>{clubEventsList.length}</strong><small>Workshops & bootcamps</small></div>
+                  <div><span>Club Identity</span><strong>{clubInfo.name}</strong><small>Est. {clubInfo.estYear}</small></div>
+                </>
+              )}
+              {session.role === 'Study zone' && (
+                <>
+                  <div><span>Syllabus Modules</span><strong>{syllabusList.length}</strong><small>Across semesters</small></div>
+                  <div><span>Question Papers</span><strong>{papersList.length}</strong><small>Past university exams</small></div>
+                  <div><span>Practice Quizzes</span><strong>{quizList.length}</strong><small>Interactive questions</small></div>
+                </>
+              )}
+              {session.role === 'Media' && (
+                <>
+                  <div><span>Gallery Photos</span><strong>{galleryList.length}</strong><small>Campus media moments</small></div>
+                  <div><span>Photo Albums</span><strong>3</strong><small>Events, Tech & Campus</small></div>
+                </>
+              )}
+              {session.role === 'Finance' && (
+                <>
+                  <div><span>Total Records</span><strong>{financeList.length}</strong><small>Ledger entries</small></div>
+                  <div><span>Audited Accounts</span><strong>100%</strong><small>Compliant</small></div>
+                </>
+              )}
             </div>
 
             <div className="admin-welcome-card">
@@ -174,7 +229,7 @@ export function AdminPanel({
                 <h3>{isSuper ? 'Superadmin Authority' : `${session.role} Workspace`}<br /><em>Enabled.</em></h3>
                 <p>
                   {isSuper
-                    ? 'You have complete control to add, edit, or delete events, faculty, associations, club branding, semester syllabus, past papers, and gallery photos.'
+                    ? 'You have complete control to add, edit, or delete events, faculty, associations, club branding, semester syllabus, past papers, gallery photos, and admin accounts.'
                     : `Manage ${session.role.toLowerCase()} sections and keep your student community informed.`}
                 </p>
               </div>
@@ -190,31 +245,111 @@ export function AdminPanel({
                 <span>Add new items with one click</span>
               </div>
               <div className="admin-action-grid">
-                <button onClick={() => onOpenModal('event', null)}>
-                  <Icon name="spark" size={19} />
-                  <span><strong>+ New Event</strong><small>Add to dashboard</small></span>
-                  <Icon name="arrow" size={15} />
-                </button>
-                <button onClick={() => onOpenModal('association', null)}>
-                  <Icon name="users" size={19} />
-                  <span><strong>+ Association Year</strong><small>Tenure year-to-year</small></span>
-                  <Icon name="arrow" size={15} />
-                </button>
-                <button onClick={() => onOpenModal('syllabus', null)}>
-                  <Icon name="book" size={19} />
-                  <span><strong>+ Add Syllabus</strong><small>Course outline by sem</small></span>
-                  <Icon name="arrow" size={15} />
-                </button>
+                {isSuper && (
+                  <>
+                    <button onClick={() => onOpenModal('event', null)}>
+                      <Icon name="spark" size={19} />
+                      <span><strong>+ New Event</strong><small>Add to dashboard</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('association', null)}>
+                      <Icon name="users" size={19} />
+                      <span><strong>+ Association Year</strong><small>Tenure year-to-year</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('adminUser', null)}>
+                      <Icon name="shield" size={19} />
+                      <span><strong>+ New Admin</strong><small>Add role account</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Department' && (
+                  <>
+                    <button onClick={() => onOpenModal('faculty', null)}>
+                      <Icon name="building" size={19} />
+                      <span><strong>+ Add Faculty</strong><small>New professor or mentor</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('student', null)}>
+                      <Icon name="users" size={19} />
+                      <span><strong>+ Add Student</strong><small>New student record</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Association' && (
+                  <>
+                    <button onClick={() => onOpenModal('association', null)}>
+                      <Icon name="users" size={19} />
+                      <span><strong>+ Association Year</strong><small>Tenure year-to-year</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('report', null)}>
+                      <Icon name="book" size={19} />
+                      <span><strong>+ Add Report</strong><small>Upload tenure report</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Club' && (
+                  <>
+                    <button onClick={() => onOpenModal('clubEvent', null)}>
+                      <Icon name="spark" size={19} />
+                      <span><strong>+ Club Event</strong><small>Workshops & bootcamps</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Study zone' && (
+                  <>
+                    <button onClick={() => onOpenModal('syllabus', null)}>
+                      <Icon name="book" size={19} />
+                      <span><strong>+ Add Syllabus</strong><small>Course outline by sem</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('paper', null)}>
+                      <Icon name="file" size={19} />
+                      <span><strong>+ Add Paper</strong><small>University question paper</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    <button onClick={() => onOpenModal('quiz', null)}>
+                      <Icon name="spark" size={19} />
+                      <span><strong>+ Add Quiz</strong><small>Interactive MCQ</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Media' && (
+                  <>
+                    <button onClick={() => onOpenModal('gallery', null)}>
+                      <Icon name="image" size={19} />
+                      <span><strong>+ Add Photo</strong><small>Campus & event moment</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
+                {session.role === 'Finance' && (
+                  <>
+                    <button onClick={() => onOpenModal('finance', null)}>
+                      <Icon name="shield" size={19} />
+                      <span><strong>+ Add Finance Record</strong><small>Income or expenditure</small></span>
+                      <Icon name="arrow" size={15} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="admin-reset-box">
-              <div>
-                <strong>Restore Demo Collections</strong>
-                <p>Reset all events, faculty, associations, syllabus, and gallery back to initial seed data.</p>
+            {isSuper && (
+              <div className="admin-reset-box">
+                <div>
+                  <strong>Restore Demo Collections</strong>
+                  <p>Reset all events, faculty, associations, syllabus, and gallery back to initial seed data.</p>
+                </div>
+                <Button variant="outline" onClick={onResetDefaults} icon="refresh">Reset all to default</Button>
               </div>
-              <Button variant="outline" onClick={onResetDefaults} icon="refresh">Reset all to default</Button>
-            </div>
+            )}
           </div>
         )}
 
@@ -618,6 +753,67 @@ export function AdminPanel({
         {/* PAGES VISIBILITY TAB */}
         {adminTab === 'Pages' && (
           <AdminPages visiblePages={visiblePages} togglePage={togglePage} showToast={showToast} />
+        )}
+
+        {/* ADMINS MANAGEMENT TAB (SUPER ADMIN ONLY) */}
+        {isSuper && adminTab === 'Admins' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="shield" size={19} /> Admin Role & Access Control <span className="admin-count-pill">{adminUsersList.length}</span></h3>
+                <p>Super admin console: manage all department admin accounts, assign scoped roles, change passwords, and revoke access.</p>
+              </div>
+              <Button onClick={() => onOpenModal('adminUser', null)} icon="plus">Add New Admin</Button>
+            </div>
+
+            <div className="admin-roles-summary-box">
+              <div className="admin-roles-summary-head">
+                <Icon name="shield" size={16} />
+                <strong>Role Authority Matrix (Scoped Permissions)</strong>
+              </div>
+              <div className="admin-roles-grid">
+                {Object.entries(rolePermissions).map(([roleKey, roleVal]) => (
+                  <div key={roleKey} className={`admin-role-badge-card ${roleKey === 'Super admin' ? 'role-card-super' : ''}`}>
+                    <div className="role-card-top">
+                      <span className="role-card-name">{roleKey}</span>
+                      <span className="role-card-scope">{roleVal.allowedTabs.join(', ')}</span>
+                    </div>
+                    <small>{roleVal.description}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-crud-list">
+              {adminUsersList.map((usr) => {
+                const isSuperAcc = usr.role === 'Super admin'
+                const isCurrent = usr.email === session.email
+                return (
+                  <div className="admin-item-row" key={usr.id || usr.email}>
+                    <div className="admin-item-main">
+                      <span className={`admin-item-badge ${isSuperAcc ? 'badge-orange' : 'badge-blue'}`}>
+                        {usr.role}
+                      </span>
+                      <div className="admin-item-details">
+                        <strong>{usr.name || usr.email}</strong>
+                        <small>{usr.email} · Role: <strong>{usr.role}</strong> {isCurrent ? ' (Current Session)' : ''}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('adminUser', usr)}>
+                        <Icon name="edit" size={13} /> Edit
+                      </button>
+                      {!isCurrent && (
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('adminUser', usr.id || usr.email, usr.name || usr.email)}>
+                          <Icon name="trash" size={13} /> Revoke
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         )}
       </section>
     </div>

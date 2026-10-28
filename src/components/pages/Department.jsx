@@ -1,16 +1,24 @@
 import { PageIntro } from '../common/PageIntro'
 import { Button } from '../common/Button'
+import { Icon } from '../common/Icon'
 
-export function Department({ goTo, facultyList }) {
+export function Department({
+  goTo,
+  facultyList,
+  canManageDept,
+  onOpenAddFaculty,
+  onEditFaculty,
+  onDeleteFaculty,
+}) {
   return (
-    <div className="page inner-page">
+    <div className="page inner-page department-page">
       <PageIntro
-        eyebrow="The people behind the practice"
-        title={<>Meet the <em>department.</em></>}
-        copy="A close-knit team of educators, mentors and builders helping the next generation find their voice in technology."
+        eyebrow="Department of Computer Applications · Est. 2013"
+        title={<>A place to grow <em>curious minds.</em></>}
+        copy="The Department of Computer Applications at PSMO College creates an environment where students explore foundational computing, applied software design, and critical problem solving."
       >
-        <div className="intro-actions">
-          <Button onClick={() => goTo('study')} icon="book">Visit the study zone</Button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Button onClick={() => goTo('study')} icon="arrow">Explore curriculum</Button>
           <span className="intro-note"><span className="status-dot" /> {facultyList.length} faculty & mentors</span>
         </div>
       </PageIntro>
@@ -30,7 +38,14 @@ export function Department({ goTo, facultyList }) {
             <div className="eyebrow"><span className="eyebrow-line" />The teaching team</div>
             <h2>People to <span>learn from.</span></h2>
           </div>
-          <span className="muted-count">{facultyList.length.toString().padStart(2, '0')} members</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="muted-count">{facultyList.length.toString().padStart(2, '0')} members</span>
+            {canManageDept && (
+              <Button onClick={onOpenAddFaculty} icon="plus" style={{ padding: '6px 12px', fontSize: '12px' }}>
+                Add Faculty
+              </Button>
+            )}
+          </div>
         </div>
         <div className="faculty-grid">
           {facultyList.map((person, index) => (
@@ -43,25 +58,47 @@ export function Department({ goTo, facultyList }) {
                 <h3>{person.name}</h3>
                 <p>{person.role}</p>
                 <small>{person.tag}</small>
+                {canManageDept && (
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '6px', borderTop: '1px solid #1e3a5f', paddingTop: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-admin-edit"
+                      onClick={() => onEditFaculty(person)}
+                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <Icon name="edit" size={11} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-admin-del"
+                      onClick={() => onDeleteFaculty(person.id, person.name)}
+                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <Icon name="trash" size={11} /> Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="programme-band">
+      <section className="department-highlights">
         <div>
-          <div className="eyebrow light"><span className="eyebrow-line" />A clear path forward</div>
-          <h2>Four years.<br /><em>Many directions.</em></h2>
+          <span className="highlight-tag">01 · PROGRAMME</span>
+          <h3>Four years. Real depth.</h3>
+          <p>Autonomous curriculum structured to bridge academic theory and industry reality.</p>
         </div>
-        <div className="semester-list">
-          {['Foundation', 'Core computing', 'Applied practice', 'Launch'].map((item, index) => (
-            <div key={item}>
-              <span>0{index + 1}</span>
-              <strong>{item}</strong>
-              <small>{index === 0 ? 'Sem 1–2' : index === 1 ? 'Sem 3–4' : index === 2 ? 'Sem 5–6' : 'Sem 7–8'}</small>
-            </div>
-          ))}
+        <div>
+          <span className="highlight-tag">02 · COMMUNITY</span>
+          <h3>Student-first spaces.</h3>
+          <p>From the BCA Association to the tech club, every initiative is led and shaped by learners.</p>
+        </div>
+        <div>
+          <span className="highlight-tag">03 · OUTCOMES</span>
+          <h3>Beyond the degree.</h3>
+          <p>Graduates move into software engineering, research, and technical leadership across domains.</p>
         </div>
       </section>
     </div>

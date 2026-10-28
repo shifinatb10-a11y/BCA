@@ -21,7 +21,14 @@ export function Gallery({ galleryList, filter, setFilter, setViewer, canManageMe
             </button>
           ))}
         </div>
-        <span className="muted-count">{filtered.length.toString().padStart(2, '0')} moments</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="muted-count">{filtered.length.toString().padStart(2, '0')} moments</span>
+          {canManageMedia && (
+            <Button onClick={onOpenAddPhoto} icon="plus" style={{ padding: '6px 12px', fontSize: '12px' }}>
+              Add Photo
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="gallery-grid">

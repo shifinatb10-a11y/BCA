@@ -55,6 +55,14 @@ export function AdminFormModal({
     if (type === 'gallery') return { title: '', type: 'Campus', image: 'college-photo.jpg' }
     if (type === 'student') return { rollNo: 'BC05', name: '', admissionNo: 'ADM-2620', registerNo: 'PSM-26120', email: '', batch: batches?.[0] || '2025–2029', semester: defaultSem }
     if (type === 'finance') return { title: '', category: 'Income', amount: '₹10,000', date: '15.06.2026', status: 'Completed', receiptUrl: '' }
+    if (type === 'adminUser') return {
+      name: initialItem?.name || '',
+      email: initialItem?.email || '',
+      role: initialItem?.role || 'Department',
+      password: initialItem?.password || (initialItem?.tokenHash ? atob(initialItem.tokenHash) : ''),
+      permissions: initialItem?.permissions || '',
+      isPrimary: initialItem?.isPrimary || false,
+    }
     return {}
   })
 
@@ -118,7 +126,11 @@ export function AdminFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave(formData)
+    const finalData = { ...formData }
+    if (type === 'adminUser' && finalData.password) {
+      finalData.tokenHash = btoa(finalData.password.trim())
+    }
+    onSave(finalData)
   }
 
   return (
@@ -127,7 +139,7 @@ export function AdminFormModal({
         <div className="modal-header">
           <div>
             <span className="eyebrow"><span className="eyebrow-line" />Admin Studio</span>
-            <h2>{isEdit ? 'Edit' : 'Add New'} {type === 'association' ? 'Association Year' : type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+            <h2>{isEdit ? 'Edit' : 'Add New'} {type === 'association' ? 'Association Year' : type === 'adminUser' ? 'Admin Role Account' : type.charAt(0).toUpperCase() + type.slice(1)}</h2>
           </div>
           <button className="icon-button" onClick={onClose} aria-label="Close dialog"><Icon name="close" /></button>
         </div>
@@ -727,6 +739,75 @@ export function AdminFormModal({
                   onChange={(url) => handleChange('receiptUrl', url)}
                   placeholder="https://ik.imagekit.io/... or upload voucher"
                 />
+              </div>
+            </>
+          )}
+
+          {/* ADMIN USER ROLE FORM */}
+          {type === 'adminUser' && (
+            <>
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Administrator Name</label>
+                  <input
+                    required
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    placeholder="e.g. Prof. Ameen Ali"
+                  />
+                </div>
+                <div className="admin-form-field">
+                  <label>Email Address (Login Username)</label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    placeholder="admin@psmo.edu.in"
+                  />
+                </div>
+              </div>
+
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Assigned Department Role</label>
+                  <select
+                    value={formData.role}
+                    disabled={formData.isPrimary}
+                    onChange={(e) => handleChange('role', e.target.value)}
+                  >
+                    <option value="Super admin">Super admin (Full Site Control)</option>
+                    <option value="Department">Department (Faculty & Students)</option>
+                    <option value="Association">Association (Tenures & Reports)</option>
+                    <option value="Club">Club (Tech Club & Workshops)</option>
+                    <option value="Study zone">Study zone (Curriculum & Exams)</option>
+                    <option value="Finance">Finance (Statements & Accounts)</option>
+                    <option value="Media">Media (Public Gallery & Moments)</option>
+                  </select>
+                </div>
+                <div className="admin-form-field">
+                  <label>Access Password</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="admin-form-field">
+                <div style={{ padding: '12px 14px', background: '#0a1628', borderRadius: '6px', border: '1px solid #1e3a5f', fontSize: '11.5px', color: '#94a3b8' }}>
+                  <strong style={{ color: '#38bdf8' }}>Role Scope & Authority: </strong>
+                  {formData.role === 'Super admin' && 'Unrestricted authority over all site sections, data modifications, settings, and administrator accounts.'}
+                  {formData.role === 'Department' && 'Authorized strictly for faculty staff directory and student admission records.'}
+                  {formData.role === 'Association' && 'Authorized strictly for student association tenures, reports, and annual magazines.'}
+                  {formData.role === 'Club' && 'Authorized strictly for BCA Tech Club profile, punchline, and events.'}
+                  {formData.role === 'Study zone' && 'Authorized strictly for academic subjects, semester syllabi, question papers, and quizzes.'}
+                  {formData.role === 'Finance' && 'Authorized strictly for financial transactions, income, expense, and statements.'}
+                  {formData.role === 'Media' && 'Authorized strictly to upload, edit, and curate campus gallery photos.'}
+                </div>
               </div>
             </>
           )}
