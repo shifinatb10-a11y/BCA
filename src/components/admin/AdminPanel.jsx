@@ -1,0 +1,625 @@
+import { useMemo, useState } from 'react'
+import { Icon } from '../common/Icon'
+import { Button } from '../common/Button'
+import { FinanceSummaryCards } from './FinanceSummaryCards'
+import { StudentManager } from './StudentManager'
+import { AdminPages } from './AdminPages'
+import { asset } from '../../utils/storage'
+
+export function AdminPanel({
+  session,
+  onClose,
+  batches,
+  setBatches,
+  visiblePages,
+  setVisiblePages,
+  showToast,
+  onLogout,
+  events,
+  facultyList,
+  subjectsList,
+  associationsList = [],
+  reportsList,
+  clubInfo,
+  onUpdateClubInfo,
+  clubEventsList,
+  galleryList,
+  papersList,
+  syllabusList = [],
+  quizList,
+  studentsList,
+  financeList,
+  onOpenModal,
+  onDeleteItem,
+  onDeleteBatch,
+  onResetDefaults,
+}) {
+  const isSuper = session.role === 'Super admin'
+  const isAssocAdmin = session.role === 'Association'
+
+  // Dynamic tabs based on role
+  // Requirement: "association admins can view the finance page but not add or edit"
+  const tabs = useMemo(() => {
+    if (isSuper) {
+      return ['Overview', 'Events', 'Department', 'Association', 'Club', 'Study zone', 'Gallery', 'Students', 'Finance', 'Pages']
+    }
+    if (session.role === 'Department') return ['Overview', 'Department', 'Students']
+    if (session.role === 'Association') return ['Overview', 'Association', 'Finance']
+    if (session.role === 'Club') return ['Overview', 'Club']
+    if (session.role === 'Study zone') return ['Overview', 'Study zone']
+    if (session.role === 'Media') return ['Overview', 'Gallery']
+    if (session.role === 'Finance') return ['Overview', 'Finance']
+    return ['Overview']
+  }, [isSuper, session.role])
+
+  const [adminTab, setAdminTab] = useState('Overview')
+  const [studySubtab, setStudySubtab] = useState('subjects') // 'subjects' | 'syllabus' | 'papers' | 'quizzes'
+  const [assocSubtab, setAssocSubtab] = useState('associations') // 'associations' | 'reports'
+  const [newBatch, setNewBatch] = useState('')
+
+  // Local state for Club editor
+  const [editClubName, setEditClubName] = useState(clubInfo.name)
+  const [editClubTagline, setEditClubTagline] = useState(clubInfo.tagline)
+  const [editClubEst, setEditClubEst] = useState(clubInfo.estYear)
+  const [editClubDesc, setEditClubDesc] = useState(clubInfo.description)
+
+  const handleSaveClubInfo = (e) => {
+    e.preventDefault()
+    onUpdateClubInfo({
+      ...clubInfo,
+      name: editClubName,
+      tagline: editClubTagline,
+      estYear: editClubEst,
+      description: editClubDesc,
+    })
+  }
+
+  const togglePage = (id) =>
+    setVisiblePages((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+
+  const addBatch = (event) => {
+    event.preventDefault()
+    if (newBatch.trim()) {
+      setBatches([...batches, newBatch.trim()])
+      setNewBatch('')
+      showToast(`Batch ${newBatch.trim()} added`)
+    }
+  }
+
+  const removeBatch = (batch) => {
+    if (onDeleteBatch) {
+      onDeleteBatch(batch)
+    } else {
+      setBatches(batches.filter((item) => item !== batch))
+      showToast(`Batch ${batch} deleted`)
+    }
+  }
+
+  return (
+    <div className="admin-backdrop">
+      <aside className="admin-panel">
+        <div className="admin-panel-head">
+          <div className="admin-brand">
+            <div className="admin-logo"><img src={asset('college-logo.png')} alt="" /></div>
+            <span><strong>Admin studio</strong><small>PSMO BCA portal</small></span>
+          </div>
+          <button className="icon-button" onClick={onClose} aria-label="Close admin studio"><Icon name="close" /></button>
+        </div>
+
+        <div className="admin-user">
+          <span className="admin-user-avatar">{session.role.slice(0, 1)}</span>
+          <div>
+            <strong>{session.name}</strong>
+            <span><i /> {session.role} · Active</span>
+          </div>
+        </div>
+
+        <nav className="admin-tabs">
+          {tabs.map((tab) => (
+            <button
+              className={adminTab === tab ? 'admin-tab-active' : ''}
+              key={tab}
+              onClick={() => setAdminTab(tab)}
+            >
+              {tab === 'Overview' && <Icon name="grid" size={14} />}
+              {tab === 'Events' && <Icon name="spark" size={14} />}
+              {tab === 'Department' && <Icon name="building" size={14} />}
+              {tab === 'Association' && <Icon name="users" size={14} />}
+              {tab === 'Club' && <Icon name="spark" size={14} />}
+              {tab === 'Study zone' && <Icon name="book" size={14} />}
+              {tab === 'Gallery' && <Icon name="image" size={14} />}
+              {tab === 'Students' && <Icon name="users" size={14} />}
+              {tab === 'Finance' && <Icon name="shield" size={14} />}
+              {tab === 'Pages' && <Icon name="grid" size={14} />}
+              <span>{tab}</span>
+              <Icon name="arrow" size={14} />
+            </button>
+          ))}
+        </nav>
+
+        <div className="admin-panel-bottom">
+          <button onClick={onResetDefaults} title="Restore default demo data">
+            <Icon name="refresh" size={16} /> Reset
+          </button>
+          <button onClick={onLogout} title="Sign out from portal">
+            <Icon name="arrow" size={16} /> Sign out
+          </button>
+        </div>
+      </aside>
+
+      <section className="admin-main">
+        <div className="admin-main-header">
+          <div>
+            <span className="eyebrow"><span className="eyebrow-line" />{session.role} workspace</span>
+            <h2>{adminTab === 'Overview' ? `Welcome, ${session.name}` : `${adminTab} Management`}</h2>
+          </div>
+          <div className="admin-secure">
+            <Icon name="shield" size={15} />
+            {isSuper ? '★ Full Super Admin Control' : 'Role Authorized'}
+          </div>
+        </div>
+
+        {/* OVERVIEW TAB */}
+        {adminTab === 'Overview' && (
+          <div className="admin-overview">
+            <div className="admin-stat-grid">
+              <div><span>Upcoming Events</span><strong>{events.length}</strong><small>Live on dashboard</small></div>
+              <div><span>Faculty Members</span><strong>{facultyList.length}</strong><small>Teaching staff</small></div>
+              <div><span>Active Associations</span><strong>{associationsList.length}</strong><small>Multi-year records</small></div>
+            </div>
+
+            <div className="admin-welcome-card">
+              <div>
+                <span className="eyebrow light"><span className="eyebrow-line" />Live Portal Controls</span>
+                <h3>{isSuper ? 'Superadmin Authority' : `${session.role} Workspace`}<br /><em>Enabled.</em></h3>
+                <p>
+                  {isSuper
+                    ? 'You have complete control to add, edit, or delete events, faculty, associations, club branding, semester syllabus, past papers, and gallery photos.'
+                    : `Manage ${session.role.toLowerCase()} sections and keep your student community informed.`}
+                </p>
+              </div>
+              <div className="admin-ring">
+                <strong>{isSuper ? '100%' : 'Active'}</strong>
+                <span>Authority<br />Status</span>
+              </div>
+            </div>
+
+            <div className="admin-actions">
+              <div className="section-heading">
+                <h3>Quick Management Links</h3>
+                <span>Add new items with one click</span>
+              </div>
+              <div className="admin-action-grid">
+                <button onClick={() => onOpenModal('event', null)}>
+                  <Icon name="spark" size={19} />
+                  <span><strong>+ New Event</strong><small>Add to dashboard</small></span>
+                  <Icon name="arrow" size={15} />
+                </button>
+                <button onClick={() => onOpenModal('association', null)}>
+                  <Icon name="users" size={19} />
+                  <span><strong>+ Association Year</strong><small>Tenure year-to-year</small></span>
+                  <Icon name="arrow" size={15} />
+                </button>
+                <button onClick={() => onOpenModal('syllabus', null)}>
+                  <Icon name="book" size={19} />
+                  <span><strong>+ Add Syllabus</strong><small>Course outline by sem</small></span>
+                  <Icon name="arrow" size={15} />
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-reset-box">
+              <div>
+                <strong>Restore Demo Collections</strong>
+                <p>Reset all events, faculty, associations, syllabus, and gallery back to initial seed data.</p>
+              </div>
+              <Button variant="outline" onClick={onResetDefaults} icon="refresh">Reset all to default</Button>
+            </div>
+          </div>
+        )}
+
+        {/* EVENTS TAB */}
+        {adminTab === 'Events' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="spark" size={19} /> Events Management <span className="admin-count-pill">{events.length}</span></h3>
+                <p>Events shown in the "Next up" section on the dashboard.</p>
+              </div>
+              <Button onClick={() => onOpenModal('event', null)} icon="plus">Add New Event</Button>
+            </div>
+            <div className="admin-crud-list">
+              {events.map((ev) => (
+                <div className="admin-item-row" key={ev.id}>
+                  <div className="admin-item-main">
+                    <span className={`admin-item-badge badge-${ev.color || 'orange'}`}>{ev.date} {ev.month}</span>
+                    <div className="admin-item-details">
+                      <strong>{ev.title}</strong>
+                      <small>{ev.meta} · Tone: {ev.color}</small>
+                    </div>
+                  </div>
+                  <div className="admin-actions-cell">
+                    <button className="btn-admin-edit" onClick={() => onOpenModal('event', ev)}><Icon name="edit" size={13} /> Edit</button>
+                    <button className="btn-admin-del" onClick={() => onDeleteItem('event', ev.id, ev.title)}><Icon name="trash" size={13} /> Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* DEPARTMENT / FACULTY TAB */}
+        {adminTab === 'Department' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="building" size={19} /> Faculty & Teaching Team <span className="admin-count-pill">{facultyList.length}</span></h3>
+                <p>Educators and mentors displayed on the Department page.</p>
+              </div>
+              <Button onClick={() => onOpenModal('faculty', null)} icon="plus">Add Faculty Member</Button>
+            </div>
+            <div className="admin-crud-list">
+              {facultyList.map((fac) => (
+                <div className="admin-item-row" key={fac.id}>
+                  <div className="admin-item-main">
+                    <img className="admin-item-avatar" src={fac.image} alt={fac.name} />
+                    <div className="admin-item-details">
+                      <strong>{fac.name}</strong>
+                      <small>{fac.role} · {fac.tag}</small>
+                    </div>
+                  </div>
+                  <div className="admin-actions-cell">
+                    <button className="btn-admin-edit" onClick={() => onOpenModal('faculty', fac)}><Icon name="edit" size={13} /> Edit</button>
+                    <button className="btn-admin-del" onClick={() => onDeleteItem('faculty', fac.id, fac.name)}><Icon name="trash" size={13} /> Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ASSOCIATION TAB - MULTI-YEAR MANAGEMENT & REPORTS */}
+        {adminTab === 'Association' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="users" size={19} /> Association Studio</h3>
+                <p>Add new associations with year spans (year to year) and manage reports.</p>
+              </div>
+              {assocSubtab === 'associations' && (
+                <Button onClick={() => onOpenModal('association', null)} icon="plus">Add Association (Year to Year)</Button>
+              )}
+              {assocSubtab === 'reports' && (
+                <Button onClick={() => onOpenModal('report', null)} icon="plus">Add Report / Magazine</Button>
+              )}
+            </div>
+
+            <div className="admin-subnav">
+              <button className={`admin-subnav-btn ${assocSubtab === 'associations' ? 'active' : ''}`} onClick={() => setAssocSubtab('associations')}>
+                Tenure Years ({associationsList.length})
+              </button>
+              <button className={`admin-subnav-btn ${assocSubtab === 'reports' ? 'active' : ''}`} onClick={() => setAssocSubtab('reports')}>
+                Reports & Magazines ({reportsList.length})
+              </button>
+            </div>
+
+            {assocSubtab === 'associations' && (
+              <div className="admin-crud-list">
+                {associationsList.map((assoc) => (
+                  <div className="admin-item-row" key={assoc.id}>
+                    <div className="admin-item-main">
+                      <span className={`admin-item-badge ${assoc.active ? 'badge-cyan' : 'badge-blue'}`}>
+                        {assoc.fromYear}—{assoc.toYear}
+                      </span>
+                      <div className="admin-item-details">
+                        <strong>{assoc.name} {assoc.active ? '(Active Tenure)' : ''}</strong>
+                        <small>Secretary: {assoc.secretaryName} · Quote: "{assoc.quote}"</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('association', assoc)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('association', assoc.id, `${assoc.name} (${assoc.fromYear}–${assoc.toYear})`)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {assocSubtab === 'reports' && (
+              <div className="admin-crud-list">
+                {reportsList.map((rep) => (
+                  <div className="admin-item-row" key={rep.id}>
+                    <div className="admin-item-main">
+                      <span className={`admin-item-badge ${rep.isMagazine ? 'badge-violet' : 'badge-orange'}`}>{rep.type}</span>
+                      <div className="admin-item-details">
+                        <strong>{rep.title}</strong>
+                        <small>Date: {rep.date} · {rep.isMagazine ? 'Magazine' : 'Report'}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('report', rep)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('report', rep.id, rep.title)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CLUB TAB - EDIT CLUB NAME/DESC & CLUB EVENTS */}
+        {adminTab === 'Club' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="spark" size={19} /> Club Studio & Branding</h3>
+                <p>Club admins can update the club name, tagline, description, and manage calendar events.</p>
+              </div>
+              <Button onClick={() => onOpenModal('clubEvent', null)} icon="plus">Add Club Event</Button>
+            </div>
+
+            {/* Club Name & Description Form */}
+            <form onSubmit={handleSaveClubInfo} className="club-editor-card">
+              <h4 style={{ margin: '0 0 14px', fontSize: '14px', color: '#38bdf8' }}>Edit Club Identity & Banner</h4>
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Club Name</label>
+                  <input value={editClubName} onChange={(e) => setEditClubName(e.target.value)} required />
+                </div>
+                <div className="admin-form-field">
+                  <label>Established Year</label>
+                  <input value={editClubEst} onChange={(e) => setEditClubEst(e.target.value)} required />
+                </div>
+              </div>
+              <div className="admin-form-row" style={{ marginTop: '12px' }}>
+                <div className="admin-form-field">
+                  <label>Club Tagline (Header H2)</label>
+                  <input value={editClubTagline} onChange={(e) => setEditClubTagline(e.target.value)} required />
+                </div>
+                <div className="admin-form-field">
+                  <label>Club Punchline</label>
+                  <input value={editClubDesc} onChange={(e) => setEditClubDesc(e.target.value)} required />
+                </div>
+              </div>
+              <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="submit" icon="check">Save Club Branding</Button>
+              </div>
+            </form>
+
+            <h4 style={{ margin: '22px 0 12px', fontSize: '14px', color: '#f8fafc' }}>Club Events & Workshops ({clubEventsList.length})</h4>
+            <div className="admin-crud-list">
+              {clubEventsList.map((ce) => (
+                <div className="admin-item-row" key={ce.id}>
+                  <div className="admin-item-main">
+                    <span className={`admin-item-badge badge-${ce.color || 'orange'}`}>{ce.number}</span>
+                    <div className="admin-item-details">
+                      <strong>{ce.title}</strong>
+                      <small>{ce.date} · {ce.copy}</small>
+                    </div>
+                  </div>
+                  <div className="admin-actions-cell">
+                    <button className="btn-admin-edit" onClick={() => onOpenModal('clubEvent', ce)}><Icon name="edit" size={13} /> Edit</button>
+                    <button className="btn-admin-del" onClick={() => onDeleteItem('clubEvent', ce.id, ce.title)}><Icon name="trash" size={13} /> Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STUDY ZONE TAB - SUBJECTS, SYLLABUS, PAPERS, QUIZZES */}
+        {adminTab === 'Study zone' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="book" size={19} /> Study Zone Academic Resources</h3>
+                <p>Study zone admins can manage semester subjects, syllabus by semester, past papers, and quizzes.</p>
+              </div>
+              {studySubtab === 'subjects' && <Button onClick={() => onOpenModal('subject', null)} icon="plus">Add Subject</Button>}
+              {studySubtab === 'syllabus' && <Button onClick={() => onOpenModal('syllabus', null)} icon="plus">Add Syllabus Entry</Button>}
+              {studySubtab === 'papers' && <Button onClick={() => onOpenModal('paper', null)} icon="plus">Add Past Paper</Button>}
+              {studySubtab === 'quizzes' && <Button onClick={() => onOpenModal('quiz', null)} icon="plus">Add Quiz Question</Button>}
+            </div>
+
+            <div className="admin-subnav">
+              <button className={`admin-subnav-btn ${studySubtab === 'subjects' ? 'active' : ''}`} onClick={() => setStudySubtab('subjects')}>
+                Subjects by Sem ({subjectsList.length})
+              </button>
+              <button className={`admin-subnav-btn ${studySubtab === 'syllabus' ? 'active' : ''}`} onClick={() => setStudySubtab('syllabus')}>
+                Syllabus by Sem ({syllabusList.length})
+              </button>
+              <button className={`admin-subnav-btn ${studySubtab === 'papers' ? 'active' : ''}`} onClick={() => setStudySubtab('papers')}>
+                Past Question Papers ({papersList.length})
+              </button>
+              <button className={`admin-subnav-btn ${studySubtab === 'quizzes' ? 'active' : ''}`} onClick={() => setStudySubtab('quizzes')}>
+                Practice Questions ({quizList.length})
+              </button>
+            </div>
+
+            {studySubtab === 'subjects' && (
+              <div className="admin-crud-list">
+                {subjectsList.map((sub) => (
+                  <div className="admin-item-row" key={sub.id}>
+                    <div className="admin-item-main">
+                      <span className={`admin-item-badge badge-${sub.tone || 'orange'}`}>{sub.code}</span>
+                      <div className="admin-item-details">
+                        <strong>{sub.title}</strong>
+                        <small>{sub.semester || 'Sem 1'} · Color tone: {sub.tone}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('subject', sub)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('subject', sub.id, sub.code)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {studySubtab === 'syllabus' && (
+              <div className="admin-crud-list">
+                {syllabusList.map((syl) => (
+                  <div className="admin-item-row" key={syl.id}>
+                    <div className="admin-item-main">
+                      <span className="admin-item-badge badge-cyan">{syl.subjectCode} · {syl.semester}</span>
+                      <div className="admin-item-details">
+                        <strong>{syl.subjectTitle}</strong>
+                        <small>{syl.credits} · {syl.modules?.length || 0} Modules defined</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('syllabus', syl)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('syllabus', syl.id, `${syl.subjectCode} Syllabus`)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {studySubtab === 'papers' && (
+              <div className="admin-crud-list">
+                {papersList.map((pap) => (
+                  <div className="admin-item-row" key={pap.id}>
+                    <div className="admin-item-main">
+                      <span className="admin-item-badge badge-blue">PDF {pap.year}</span>
+                      <div className="admin-item-details">
+                        <strong>{pap.subject} · {pap.semester || 'Sem 1'}</strong>
+                        <small>Question paper year: {pap.year}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('paper', pap)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('paper', pap.id, `${pap.subject} ${pap.year}`)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {studySubtab === 'quizzes' && (
+              <div className="admin-crud-list">
+                {quizList.map((q, idx) => (
+                  <div className="admin-item-row" key={q.id || idx}>
+                    <div className="admin-item-main">
+                      <span className="admin-item-badge badge-green">{q.subject || 'MFC'} · {q.semester || 'Sem 1'}</span>
+                      <div className="admin-item-details">
+                        <strong>Q{idx + 1}: {q.text}</strong>
+                        <small>Subject: {q.subject || 'MFC'} ({q.semester || 'Sem 1'}) · Answer: {q.answer}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('quiz', q)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('quiz', q.id, q.text)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GALLERY TAB */}
+        {adminTab === 'Gallery' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="image" size={19} /> Gallery Moments <span className="admin-count-pill">{galleryList.length}</span></h3>
+                <p>Photos and moments displayed in the living campus archive.</p>
+              </div>
+              <Button onClick={() => onOpenModal('gallery', null)} icon="plus">Add Gallery Photo</Button>
+            </div>
+            <div className="admin-crud-list">
+              {galleryList.map((gal) => (
+                <div className="admin-item-row" key={gal.id}>
+                  <div className="admin-item-main">
+                    <img
+                      className="admin-item-avatar"
+                      src={gal.image.startsWith('http') ? gal.image : asset(gal.image)}
+                      alt={gal.title}
+                    />
+                    <div className="admin-item-details">
+                      <strong>{gal.title}</strong>
+                      <small>Category: {gal.type} · Source: {gal.image}</small>
+                    </div>
+                  </div>
+                  <div className="admin-actions-cell">
+                    <button className="btn-admin-edit" onClick={() => onOpenModal('gallery', gal)}><Icon name="edit" size={13} /> Edit</button>
+                    <button className="btn-admin-del" onClick={() => onDeleteItem('gallery', gal.id, gal.title)}><Icon name="trash" size={13} /> Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STUDENTS & BATCHES TAB */}
+        {adminTab === 'Students' && (
+          <StudentManager
+            batches={batches}
+            newBatch={newBatch}
+            setNewBatch={setNewBatch}
+            addBatch={addBatch}
+            removeBatch={removeBatch}
+            showToast={showToast}
+            studentsList={studentsList}
+            onOpenAddStudent={() => onOpenModal('student', null)}
+            onEditStudent={(stu) => onOpenModal('student', stu)}
+            onDeleteStudent={(id, name) => onDeleteItem('student', id, name)}
+          />
+        )}
+
+        {/* FINANCE TAB - REQUIREMENT: ASSOCIATION ADMIN CAN VIEW BUT NOT ADD OR EDIT */}
+        {adminTab === 'Finance' && (
+          <div className="admin-crud-card">
+            <div className="admin-crud-header">
+              <div>
+                <h3><Icon name="shield" size={19} /> Association Finance Records <span className="admin-count-pill">{financeList.length}</span></h3>
+                <p>Audited balances, sponsorships, grants, and operational expenditures.</p>
+              </div>
+              {!isAssocAdmin && (
+                <Button onClick={() => onOpenModal('finance', null)} icon="plus">Add Finance Record</Button>
+              )}
+            </div>
+
+            {isAssocAdmin && (
+              <div className="readonly-notice">
+                <Icon name="shield" size={16} />
+                <span><strong>Read-Only Access for Association Admins:</strong> You have authorization to view all statements and balances. Adding, editing, and deleting records is restricted to Finance & Super admins.</span>
+              </div>
+            )}
+
+            {/* KPI STAT CARDS: TOTAL INCOME, TOTAL EXPENSE, BALANCE */}
+            <FinanceSummaryCards financeList={financeList} />
+
+            <div className="admin-crud-list">
+              {financeList.map((fin) => (
+                <div className="admin-item-row" key={fin.id}>
+                  <div className="admin-item-main">
+                    <span className={`admin-item-badge ${fin.category === 'Income' ? 'badge-green' : fin.category === 'Expense' ? 'badge-orange' : 'badge-blue'}`}>
+                      {fin.category}
+                    </span>
+                    <div className="admin-item-details">
+                      <strong>{fin.title}</strong>
+                      <small>Amount: {fin.amount} · Date: {fin.date} · Status: {fin.status}</small>
+                    </div>
+                  </div>
+                  {!isAssocAdmin && (
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('finance', fin)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('finance', fin.id, fin.title)}><Icon name="trash" size={13} /> Delete</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PAGES VISIBILITY TAB */}
+        {adminTab === 'Pages' && (
+          <AdminPages visiblePages={visiblePages} togglePage={togglePage} showToast={showToast} />
+        )}
+      </section>
+    </div>
+  )
+}

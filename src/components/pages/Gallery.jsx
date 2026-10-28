@@ -1,0 +1,56 @@
+import { PageIntro } from '../common/PageIntro'
+import { Button } from '../common/Button'
+import { Icon } from '../common/Icon'
+import { asset } from '../../utils/storage'
+
+export function Gallery({ galleryList, filter, setFilter, setViewer, canManageMedia, onOpenAddPhoto }) {
+  const filtered = filter === 'All' ? galleryList : galleryList.filter((item) => item.type === filter)
+
+  return (
+    <div className="page inner-page gallery-page">
+      <PageIntro
+        eyebrow="A living archive"
+        title={<>Life in <em>frames.</em></>}
+        copy="The places, people and little in-between moments that make our department feel like ours."
+      />
+      <div className="gallery-toolbar">
+        <div className="filter-tabs">
+          {['All', 'Campus', 'Events', 'Identity'].map((item) => (
+            <button className={filter === item ? 'filter-active' : ''} key={item} onClick={() => setFilter(item)}>
+              {item}
+            </button>
+          ))}
+        </div>
+        <span className="muted-count">{filtered.length.toString().padStart(2, '0')} moments</span>
+      </div>
+
+      <div className="gallery-grid">
+        {filtered.map((item, index) => (
+          <button
+            className={`gallery-item gallery-item-${(index % 6) + 1}`}
+            key={item.id || `${item.title}-${index}`}
+            onClick={() => setViewer({ title: item.title, kind: item.type, image: item.image.startsWith('http') ? item.image : asset(item.image) })}
+          >
+            <img src={item.image.startsWith('http') ? item.image : asset(item.image)} alt={item.title} />
+            <span className="gallery-overlay">
+              <small>{item.type}</small>
+              <strong>{item.title}</strong>
+              <i><Icon name="arrow" size={16} /></i>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <section className="gallery-cta">
+        <span className="camera-icon"><Icon name="image" size={23} /></span>
+        <div>
+          <h3>Have a moment to share?</h3>
+          <p>Super admins and Media admins can add pictures directly to the public gallery.</p>
+        </div>
+        {canManageMedia && (
+          <Button variant="outline" onClick={onOpenAddPhoto} icon="plus">Add gallery photo</Button>
+        )}
+      </section>
+    </div>
+  )
+}
