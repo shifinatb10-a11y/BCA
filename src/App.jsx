@@ -22,6 +22,12 @@ import {
 // Utilities & Security
 import { loadStorage, saveStorage } from './utils/storage'
 import { verifyCredentials, initBrowserSecurity } from './utils/security'
+import {
+  fetchAllSupabaseData,
+  signInWithSupabase,
+  signOutSupabase,
+  supabase,
+} from './utils/supabase'
 
 // Common & Layout
 import { Icon } from './components/common/Icon'
@@ -63,9 +69,72 @@ export function App() {
   const [viewer, setViewer] = useState(null)
   const [financeViewerOpen, setFinanceViewerOpen] = useState(false)
 
-  // Initialize browser security banner
+  // Initialize browser security banner & live Supabase sync
   useEffect(() => {
     initBrowserSecurity()
+
+    let active = true
+    const loadCloudData = async () => {
+      try {
+        const cloudData = await fetchAllSupabaseData()
+        if (!active) return
+
+        if (cloudData.faculty && cloudData.faculty.length > 0) {
+          setFacultyList(cloudData.faculty)
+          saveStorage('faculty', cloudData.faculty)
+        }
+        if (cloudData.associations && cloudData.associations.length > 0) {
+          setAssociationsList(cloudData.associations)
+          setSelectedAssocId(cloudData.associations[0].id)
+          saveStorage('associations', cloudData.associations)
+        }
+        if (cloudData.reports && cloudData.reports.length > 0) {
+          setReportsList(cloudData.reports)
+          saveStorage('reports', cloudData.reports)
+        }
+        if (cloudData.clubInfo && cloudData.clubInfo.name) {
+          setClubInfo(cloudData.clubInfo)
+          saveStorage('club_info', cloudData.clubInfo)
+        }
+        if (cloudData.clubEvents && cloudData.clubEvents.length > 0) {
+          setClubEventsList(cloudData.clubEvents)
+          saveStorage('club_events', cloudData.clubEvents)
+        }
+        if (cloudData.gallery && cloudData.gallery.length > 0) {
+          setGalleryList(cloudData.gallery)
+          saveStorage('gallery', cloudData.gallery)
+        }
+        if (cloudData.papers && cloudData.papers.length > 0) {
+          setPapersList(cloudData.papers)
+          saveStorage('papers', cloudData.papers)
+        }
+        if (cloudData.syllabi && cloudData.syllabi.length > 0) {
+          setSyllabusList(cloudData.syllabi)
+          saveStorage('syllabus', cloudData.syllabi)
+        }
+        if (cloudData.quizzes && cloudData.quizzes.length > 0) {
+          setQuizList(cloudData.quizzes)
+          saveStorage('quiz_questions', cloudData.quizzes)
+        }
+        if (cloudData.students && cloudData.students.length > 0) {
+          setStudentsList(cloudData.students)
+          saveStorage('students', cloudData.students)
+        }
+        if (cloudData.batches && cloudData.batches.length > 0) {
+          setBatches(cloudData.batches)
+          saveStorage('batches', cloudData.batches)
+        }
+        if (cloudData.finance && cloudData.finance.length > 0) {
+          setFinanceList(cloudData.finance)
+          saveStorage('finance', cloudData.finance)
+        }
+      } catch (err) {
+        console.warn('[BCA Portal] Supabase sync fallback:', err)
+      }
+    }
+
+    loadCloudData()
+    return () => { active = false }
   }, [])
 
   // Dynamic CMS collections
@@ -138,8 +207,24 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Admin authentication using security service
-  const signInWithCredentials = (role, email, pass) => {
+  // Admin authentication using Supabase Cloud GoTrue with local verified fallback
+  const signInWithCredentials = async (role, email, pass) => {
+    // 1. First attempt Supabase Cloud GoTrue Authentication
+    try {
+      const supaRes = await signInWithSupabase(email, pass)
+      if (supaRes.success) {
+        const finalRole = supaRes.session.role || role
+        const sessionData = { ...supaRes.session, role: finalRole }
+        setSession(sessionData)
+        saveStorage('session', sessionData)
+        setLoginOpen(false)
+        setAdminOpen(true)
+        showToast(`Authenticated via Supabase: Welcome, ${sessionData.name} (${finalRole})`)
+        return { success: true }
+      }
+    } catch (e) {}
+
+    // 2. Fallback to verified local role credentials
     const res = verifyCredentials(role, email, pass)
     if (res.success) {
       setSession(res.session)
@@ -152,11 +237,112 @@ export function App() {
     return { success: false, message: res.message }
   }
 
-  const signOut = () => {
+  const signOut = async () => {
+    await signOutSupabase()
     setSession(null)
     saveStorage('session', null)
     setAdminOpen(false)
     showToast('Signed out from admin studio')
+  }
+
+  // Cloud Database Sync Helper
+  const syncItemToSupabase = async (type, item, isDelete = false) => {
+    try {
+      if (type === 'faculty') {
+        if (isDelete) {
+          await supabase.from('faculty').delete().eq('id', item.id)
+        } else {
+          await supabase.from('faculty').upsert({
+            name: item.name,
+            designation: item.role,
+            qualification: item.tag,
+            photo_url: item.image,
+            email: item.email || '',
+            bio: item.bio || '',
+          })
+        }
+      } else if (type === 'association') {
+        if (isDelete) {
+          await supabase.from('associations').delete().eq('id', item.id)
+        } else {
+          await supabase.from('associations').upsert({
+            name: item.name,
+            secretary_name: item.secretaryName,
+            secretary_designation: item.secretaryRole,
+            secretary_photo_url: item.secretaryPhoto,
+            secretary_details: item.quote,
+            description: item.description,
+            year_label: `${item.fromYear}–${item.toYear}`,
+            start_year: parseInt(item.fromYear) || 2026,
+            end_year: parseInt(item.toYear) || 2027,
+          })
+        }
+      } else if (type === 'gallery') {
+        if (isDelete) {
+          await supabase.from('gallery_items').delete().eq('id', item.id)
+        } else {
+          await supabase.from('gallery_items').upsert({
+            title: item.title,
+            media_type: 'image',
+            url: item.image,
+            thumbnail_url: item.image,
+          })
+        }
+      } else if (type === 'student') {
+        if (isDelete) {
+          await supabase.from('students').delete().eq('id', item.id)
+        } else {
+          await supabase.from('students').upsert({
+            name: item.name,
+            roll_no: item.rollNo,
+            admission_no: item.admissionNo,
+            register_no: item.registerNo,
+            email: item.email,
+            batch: item.batch,
+          })
+        }
+      } else if (type === 'finance') {
+        if (isDelete) {
+          await supabase.from('transactions').delete().eq('id', item.id)
+        } else {
+          const numAmount = parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0
+          await supabase.from('transactions').upsert({
+            title: item.title,
+            category: item.category,
+            amount: numAmount,
+            transaction_date: new Date().toISOString(),
+          })
+        }
+      } else if (type === 'paper') {
+        if (isDelete) {
+          await supabase.from('study_materials').delete().eq('id', item.id)
+        } else {
+          await supabase.from('study_materials').upsert({
+            title: `${item.subject} (${item.year}) Question Paper`,
+            category: 'question_paper',
+            subject: item.subject,
+            semester: item.semester,
+            year: String(item.year),
+            file_url: item.fileUrl || '',
+          })
+        }
+      } else if (type === 'syllabus') {
+        if (isDelete) {
+          await supabase.from('study_materials').delete().eq('id', item.id)
+        } else {
+          await supabase.from('study_materials').upsert({
+            title: item.subjectTitle,
+            category: 'syllabus',
+            subject: item.subjectCode,
+            semester: item.semester,
+            description: JSON.stringify(item.modules || []),
+            file_url: item.fileUrl || '',
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('[Supabase Sync Notice]', e)
+    }
   }
 
   // Universal CRUD Handlers
@@ -215,6 +401,9 @@ export function App() {
       saveStorage('finance', updated)
     }
 
+    // Background sync to Supabase database
+    syncItemToSupabase(type, finalItem)
+
     setModalForm(null)
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully`)
   }
@@ -270,6 +459,9 @@ export function App() {
       setFinanceList(updated)
       saveStorage('finance', updated)
     }
+
+    // Background sync deletion to Supabase
+    syncItemToSupabase(type, { id }, true)
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`)
   }

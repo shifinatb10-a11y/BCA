@@ -4,12 +4,16 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_', 'IMAGEKIT_'],
   build: {
     // SECURITY: Disable client sourcemaps to prevent Inspect Element -> Sources disclosure
     sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('@supabase')) {
+            return 'supabase'
+          }
           if (id.includes('node_modules')) {
             return 'vendor'
           }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../common/Icon'
 import { Button } from '../common/Button'
+import { ImageKitUploader } from '../common/ImageKitUploader'
 
 export function AdminFormModal({
   type,
@@ -27,8 +28,8 @@ export function AdminFormModal({
       description: 'Continuing the legacy of student-led innovation and tech exploration.',
       active: true,
     }
-    if (type === 'report') return { title: '', type: 'EVENT REPORT', date: '12.07.2026', isMagazine: false }
-    if (type === 'clubEvent') return { number: '04', title: '', date: '20 Jul · 11:00 AM', copy: '', color: 'orange' }
+    if (type === 'report') return { title: '', type: 'EVENT REPORT', date: '12.07.2026', isMagazine: false, fileUrl: '' }
+    if (type === 'clubEvent') return { number: '04', title: '', date: '20 Jul · 11:00 AM', copy: '', color: 'orange', image: '' }
     if (type === 'subject') return { code: '', title: '', tone: 'cyan', semester: defaultSem }
     if (type === 'syllabus') {
       const sem = initialItem?.semester || defaultSem
@@ -40,6 +41,7 @@ export function AdminFormModal({
         semester: sem,
         credits: initialItem?.credits || '4 Credits · 60 Hours',
         regulation: initialItem?.regulation || 'PSMO Autonomous / Calicut University 2026',
+        fileUrl: initialItem?.fileUrl || '',
         modules: initialItem?.modules || [
           { unit: 'Unit 1: Fundamentals', desc: 'Core foundational principles and mathematical structures.' },
           { unit: 'Unit 2: Applied Techniques', desc: 'Methodologies, algorithms, and practical implementations.' },
@@ -48,11 +50,11 @@ export function AdminFormModal({
         ],
       }
     }
-    if (type === 'paper') return { subject: subjectsList?.[0]?.code || 'MFC', semester: defaultSem, year: '2026' }
+    if (type === 'paper') return { subject: subjectsList?.[0]?.code || 'MFC', semester: defaultSem, year: '2026', fileUrl: '' }
     if (type === 'quiz') return { text: '', options: ['', '', '', ''], answer: '', subject: subjectsList?.[0]?.code || 'MFC', semester: defaultSem }
     if (type === 'gallery') return { title: '', type: 'Campus', image: 'college-photo.jpg' }
     if (type === 'student') return { rollNo: 'BC05', name: '', admissionNo: 'ADM-2620', registerNo: 'PSM-26120', email: '', batch: batches?.[0] || '2025–2029', semester: defaultSem }
-    if (type === 'finance') return { title: '', category: 'Income', amount: '₹10,000', date: '15.06.2026', status: 'Completed' }
+    if (type === 'finance') return { title: '', category: 'Income', amount: '₹10,000', date: '15.06.2026', status: 'Completed', receiptUrl: '' }
     return {}
   })
 
@@ -194,8 +196,13 @@ export function AdminFormModal({
                 </div>
               </div>
               <div className="admin-form-field">
-                <label>Secretary Photo URL</label>
-                <input required value={formData.secretaryPhoto} onChange={(e) => handleChange('secretaryPhoto', e.target.value)} placeholder="https://..." />
+                <ImageKitUploader
+                  label="Secretary Photo"
+                  folder="/bca_portal/associations"
+                  value={formData.secretaryPhoto}
+                  onChange={(url) => handleChange('secretaryPhoto', url)}
+                  placeholder="https://ik.imagekit.io/... or upload photo"
+                />
               </div>
               <div className="admin-form-field">
                 <label>Association Motto / Quote</label>
@@ -230,8 +237,13 @@ export function AdminFormModal({
                 </div>
               </div>
               <div className="admin-form-field">
-                <label>Photo URL (Unsplash or image link)</label>
-                <input required value={formData.image} onChange={(e) => handleChange('image', e.target.value)} placeholder="https://..." />
+                <ImageKitUploader
+                  label="Faculty Portrait Photo"
+                  folder="/bca_portal/faculty"
+                  value={formData.image}
+                  onChange={(url) => handleChange('image', url)}
+                  placeholder="https://ik.imagekit.io/... or upload photo"
+                />
               </div>
             </>
           )}
@@ -312,6 +324,17 @@ export function AdminFormModal({
                   <label>University / Regulation</label>
                   <input required value={formData.regulation} onChange={(e) => handleChange('regulation', e.target.value)} placeholder="e.g. PSMO Autonomous 2026" />
                 </div>
+              </div>
+
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Official Syllabus PDF Document (Optional)"
+                  folder="/bca_portal/syllabus"
+                  accept=".pdf"
+                  value={formData.fileUrl}
+                  onChange={(url) => handleChange('fileUrl', url)}
+                  placeholder="https://ik.imagekit.io/... or upload syllabus PDF"
+                />
               </div>
 
               <div style={{ marginTop: '14px' }}>
@@ -452,6 +475,16 @@ export function AdminFormModal({
                 <input type="checkbox" id="magCheck" checked={Boolean(formData.isMagazine)} onChange={(e) => handleChange('isMagazine', e.target.checked)} />
                 <label htmlFor="magCheck" style={{ margin: 0, cursor: 'pointer' }}>Mark as Annual Magazine / Journal</label>
               </div>
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Report / Magazine Document (PDF or Image)"
+                  folder="/bca_portal/reports"
+                  accept=".pdf,image/*"
+                  value={formData.fileUrl}
+                  onChange={(url) => handleChange('fileUrl', url)}
+                  placeholder="https://ik.imagekit.io/... or upload document"
+                />
+              </div>
             </>
           )}
 
@@ -484,6 +517,15 @@ export function AdminFormModal({
                 <label>Description / Copy</label>
                 <textarea required value={formData.copy} onChange={(e) => handleChange('copy', e.target.value)} placeholder="Short event description..." />
               </div>
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Event Poster / Graphic (Optional)"
+                  folder="/bca_portal/clubs"
+                  value={formData.image}
+                  onChange={(url) => handleChange('image', url)}
+                  placeholder="https://ik.imagekit.io/... or upload poster"
+                />
+              </div>
             </>
           )}
 
@@ -508,6 +550,16 @@ export function AdminFormModal({
               <div className="admin-form-field">
                 <label>Exam Year</label>
                 <input required value={formData.year} onChange={(e) => handleChange('year', e.target.value)} placeholder="e.g. 2026" />
+              </div>
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Question Paper PDF Document"
+                  folder="/bca_portal/question_papers"
+                  accept=".pdf"
+                  value={formData.fileUrl}
+                  onChange={(url) => handleChange('fileUrl', url)}
+                  placeholder="https://ik.imagekit.io/... or upload question paper PDF"
+                />
               </div>
             </>
           )}
@@ -567,19 +619,22 @@ export function AdminFormModal({
                 <label>Photo Caption / Title</label>
                 <input required value={formData.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. Coding Marathon in Lab 1" />
               </div>
-              <div className="admin-form-row">
-                <div className="admin-form-field">
-                  <label>Category</label>
-                  <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)}>
-                    <option value="Campus">Campus</option>
-                    <option value="Events">Events</option>
-                    <option value="Identity">Identity</option>
-                  </select>
-                </div>
-                <div className="admin-form-field">
-                  <label>Image Source (filename or URL)</label>
-                  <input required value={formData.image} onChange={(e) => handleChange('image', e.target.value)} placeholder="college-photo.jpg or https://..." />
-                </div>
+              <div className="admin-form-field">
+                <label>Category</label>
+                <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)}>
+                  <option value="Campus">Campus</option>
+                  <option value="Events">Events</option>
+                  <option value="Identity">Identity</option>
+                </select>
+              </div>
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Gallery Photo / Media"
+                  folder="/bca_portal/gallery"
+                  value={formData.image}
+                  onChange={(url) => handleChange('image', url)}
+                  placeholder="https://ik.imagekit.io/... or upload photo"
+                />
               </div>
             </>
           )}
@@ -662,6 +717,16 @@ export function AdminFormModal({
                     <option value="Pending">Pending</option>
                   </select>
                 </div>
+              </div>
+              <div className="admin-form-field">
+                <ImageKitUploader
+                  label="Receipt / Bill / Voucher Attachment (Image or PDF)"
+                  folder="/bca_portal/finance"
+                  accept="image/*,.pdf"
+                  value={formData.receiptUrl}
+                  onChange={(url) => handleChange('receiptUrl', url)}
+                  placeholder="https://ik.imagekit.io/... or upload voucher"
+                />
               </div>
             </>
           )}
