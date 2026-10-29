@@ -32,20 +32,26 @@ export function Gallery({ galleryList, filter, setFilter, setViewer, canManageMe
       </div>
 
       <div className="gallery-grid">
-        {filtered.map((item, index) => (
-          <button
-            className={`gallery-item gallery-item-${(index % 6) + 1}`}
-            key={item.id || `${item.title}-${index}`}
-            onClick={() => setViewer({ title: item.title, kind: item.type, image: item.image.startsWith('http') ? item.image : asset(item.image) })}
-          >
-            <img src={item.image.startsWith('http') ? item.image : asset(item.image)} alt={item.title} />
-            <span className="gallery-overlay">
-              <small>{item.type}</small>
-              <strong>{item.title}</strong>
-              <i><Icon name="arrow" size={16} /></i>
-            </span>
-          </button>
-        ))}
+        {filtered.length > 0 ? (
+          filtered.map((item, index) => (
+            <button
+              className={`gallery-item gallery-item-${(index % 6) + 1}`}
+              key={item.id || `${item.title}-${index}`}
+              onClick={() => setViewer({ title: item.title, kind: item.type, image: item.image.startsWith('http') ? item.image : asset(item.image) })}
+            >
+              <img src={item.image.startsWith('http') ? item.image : asset(item.image)} alt={item.title} />
+              <span className="gallery-overlay">
+                <small>{item.type}</small>
+                <strong>{item.title}</strong>
+                <i><Icon name="arrow" size={16} /></i>
+              </span>
+            </button>
+          ))
+        ) : (
+          <div className="empty-state-card" style={{ padding: '40px 20px', textAlign: 'center', background: '#081220', border: '1px dashed #1e3a5f', borderRadius: '8px', color: '#94a3b8', gridColumn: '1 / -1' }}>
+            <p style={{ margin: 0, fontSize: '14px' }}>No photos found in this category.</p>
+          </div>
+        )}
       </div>
     </div>
   )

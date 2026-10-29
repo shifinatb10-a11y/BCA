@@ -149,8 +149,8 @@ export function AdminPanel({
 
         <div className="admin-panel-bottom">
           {isSuper && (
-            <button onClick={onResetDefaults} title="Restore default demo data">
-              <Icon name="refresh" size={16} /> Reset
+            <button onClick={onResetDefaults} title="Delete all test data from website">
+              <Icon name="trash" size={16} /> Delete test data
             </button>
           )}
           <button onClick={onLogout} title="Sign out from portal">
@@ -345,10 +345,10 @@ export function AdminPanel({
             {isSuper && (
               <div className="admin-reset-box">
                 <div>
-                  <strong>Restore Demo Collections</strong>
-                  <p>Reset all events, faculty, associations, syllabus, and gallery back to initial seed data.</p>
+                  <strong>Delete All Test Data</strong>
+                  <p>Permanently wipe all demo and test records (events, faculty, associations, reports, syllabus, papers, quizzes, gallery, students, finances) from the website so you can start with a clean portal.</p>
                 </div>
-                <Button variant="outline" onClick={onResetDefaults} icon="refresh">Reset all to default</Button>
+                <Button variant="outline" onClick={onResetDefaults} icon="trash">Delete all test data</Button>
               </div>
             )}
           </div>
@@ -426,7 +426,7 @@ export function AdminPanel({
                 <Button onClick={() => onOpenModal('association', null)} icon="plus">Add Association (Year to Year)</Button>
               )}
               {assocSubtab === 'reports' && (
-                <Button onClick={() => onOpenModal('report', null)} icon="plus">Add Report / Magazine</Button>
+                <Button onClick={() => onOpenModal('report', { associationId: associationsList[0]?.id || '', isMagazine: true, type: 'ANNUAL MAGAZINE' })} icon="plus">Add Report / Magazine</Button>
               )}
             </div>
 
@@ -463,21 +463,27 @@ export function AdminPanel({
 
             {assocSubtab === 'reports' && (
               <div className="admin-crud-list">
-                {reportsList.map((rep) => (
-                  <div className="admin-item-row" key={rep.id}>
-                    <div className="admin-item-main">
-                      <span className={`admin-item-badge ${rep.isMagazine ? 'badge-violet' : 'badge-orange'}`}>{rep.type}</span>
-                      <div className="admin-item-details">
-                        <strong>{rep.title}</strong>
-                        <small>Date: {rep.date} · {rep.isMagazine ? 'Magazine' : 'Report'}</small>
+                {reportsList.map((rep) => {
+                  const linkedAssoc = associationsList.find((a) => a.id === rep.associationId)
+                  return (
+                    <div className="admin-item-row" key={rep.id}>
+                      <div className="admin-item-main">
+                        <span className={`admin-item-badge ${rep.isMagazine ? 'badge-violet' : 'badge-orange'}`}>{rep.type}</span>
+                        <div className="admin-item-details">
+                          <strong>{rep.title}</strong>
+                          <small>
+                            {linkedAssoc ? `Tenure: ${linkedAssoc.fromYear}–${linkedAssoc.toYear} (${linkedAssoc.secretaryName || 'Secretary'}) · ` : ''}
+                            Date: {rep.date} · {rep.isMagazine ? 'Magazine' : 'Report'}
+                          </small>
+                        </div>
+                      </div>
+                      <div className="admin-actions-cell">
+                        <button className="btn-admin-edit" onClick={() => onOpenModal('report', rep)}><Icon name="edit" size={13} /> Edit</button>
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('report', rep.id, rep.title)}><Icon name="trash" size={13} /> Delete</button>
                       </div>
                     </div>
-                    <div className="admin-actions-cell">
-                      <button className="btn-admin-edit" onClick={() => onOpenModal('report', rep)}><Icon name="edit" size={13} /> Edit</button>
-                      <button className="btn-admin-del" onClick={() => onDeleteItem('report', rep.id, rep.title)}><Icon name="trash" size={13} /> Delete</button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

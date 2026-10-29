@@ -8,60 +8,93 @@ export function AdminFormModal({
   initialItem,
   onClose,
   onSave,
-  batches,
-  subjectsList,
+  batches = [],
+  subjectsList = [],
+  associationsList = [],
   semester: defaultSem = 'Sem 1',
 }) {
   const isEdit = Boolean(initialItem && initialItem.id)
   const [formData, setFormData] = useState(() => {
     if (initialItem) return { ...initialItem }
-    if (type === 'event') return { title: '', date: '15', month: 'JUL', meta: 'Department · 10:00 AM', color: 'orange' }
-    if (type === 'faculty') return { name: '', role: 'Assistant Professor', tag: 'MCA · Data Science', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=480&q=85' }
+    if (type === 'event') return { title: '', date: '', month: '', meta: '', color: 'orange' }
+    if (type === 'faculty') return { name: '', role: '', tag: '', image: '', email: '', bio: '' }
     if (type === 'association') return {
-      fromYear: '2027',
-      toYear: '2028',
-      name: 'Third BCA Association',
+      fromYear: '',
+      toYear: '',
+      name: '',
       secretaryName: '',
-      secretaryRole: 'Secretary · 2027—28',
-      secretaryPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=560&q=85',
-      quote: 'Innovate together, inspire forever.',
-      description: 'Continuing the legacy of student-led innovation and tech exploration.',
-      active: true,
+      secretaryRole: '',
+      secretaryPhoto: '',
+      quote: '',
+      description: '',
+      magazineTitle: '',
+      magazineUrl: '',
+      active: false,
     }
-    if (type === 'report') return { title: '', type: 'EVENT REPORT', date: '12.07.2026', isMagazine: false, fileUrl: '' }
-    if (type === 'clubEvent') return { number: '04', title: '', date: '20 Jul · 11:00 AM', copy: '', color: 'orange', image: '' }
+    if (type === 'report' || type === 'magazine') return {
+      title: '',
+      type: type === 'magazine' ? 'ANNUAL MAGAZINE' : 'EVENT REPORT',
+      date: '',
+      isMagazine: type === 'magazine',
+      fileUrl: '',
+      associationId: associationsList?.[0]?.id || '',
+    }
+    if (type === 'clubEvent') return { number: '', title: '', date: '', copy: '', color: 'orange', image: '' }
     if (type === 'subject') return { code: '', title: '', tone: 'cyan', semester: defaultSem }
     if (type === 'syllabus') {
-      const sem = initialItem?.semester || defaultSem
+      const sem = defaultSem
       const semSubs = subjectsList?.filter((s) => (s.semester || 'Sem 1') === sem) || []
-      const matched = semSubs.find((s) => s.code === initialItem?.subjectCode) || semSubs[0] || subjectsList?.[0]
+      const matched = semSubs[0] || subjectsList?.[0]
       return {
-        subjectCode: initialItem?.subjectCode || matched?.code || 'MFC',
-        subjectTitle: initialItem?.subjectTitle || matched?.title || 'Mathematical Foundations of Computing',
+        subjectCode: matched?.code || '',
+        subjectTitle: matched?.title || '',
         semester: sem,
-        credits: initialItem?.credits || '4 Credits · 60 Hours',
-        regulation: initialItem?.regulation || 'PSMO Autonomous / Calicut University 2026',
-        fileUrl: initialItem?.fileUrl || '',
-        modules: initialItem?.modules || [
-          { unit: 'Unit 1: Fundamentals', desc: 'Core foundational principles and mathematical structures.' },
-          { unit: 'Unit 2: Applied Techniques', desc: 'Methodologies, algorithms, and practical implementations.' },
-          { unit: 'Unit 3: Advanced Concepts', desc: 'System design, optimization, and complex analysis.' },
-          { unit: 'Unit 4: Case Studies & Lab', desc: 'Hands-on laboratory work and project exercises.' },
+        credits: '',
+        regulation: '',
+        fileUrl: '',
+        modules: [
+          { unit: 'Unit 1', desc: '' },
+          { unit: 'Unit 2', desc: '' },
         ],
       }
     }
-    if (type === 'paper') return { subject: subjectsList?.[0]?.code || 'MFC', semester: defaultSem, year: '2026', fileUrl: '' }
-    if (type === 'quiz') return { text: '', options: ['', '', '', ''], answer: '', subject: subjectsList?.[0]?.code || 'MFC', semester: defaultSem }
-    if (type === 'gallery') return { title: '', type: 'Campus', image: 'college-photo.jpg' }
-    if (type === 'student') return { rollNo: 'BC05', name: '', admissionNo: 'ADM-2620', registerNo: 'PSM-26120', email: '', batch: batches?.[0] || '2025–2029', semester: defaultSem }
-    if (type === 'finance') return { title: '', category: 'Income', amount: '₹10,000', date: '15.06.2026', status: 'Completed', receiptUrl: '' }
+    if (type === 'paper') {
+      const semSubs = subjectsList?.filter((s) => (s.semester || 'Sem 1') === defaultSem) || []
+      return {
+        subject: semSubs[0]?.code || subjectsList?.[0]?.code || '',
+        semester: defaultSem,
+        year: '',
+        fileUrl: '',
+      }
+    }
+    if (type === 'quiz') {
+      const semSubs = subjectsList?.filter((s) => (s.semester || 'Sem 1') === defaultSem) || []
+      return {
+        text: '',
+        options: ['', '', '', ''],
+        answer: '',
+        subject: semSubs[0]?.code || subjectsList?.[0]?.code || '',
+        semester: defaultSem,
+      }
+    }
+    if (type === 'gallery') return { title: '', type: 'Campus', image: '' }
+    if (type === 'student') return {
+      rollNo: '',
+      name: '',
+      admissionNo: '',
+      registerNo: '',
+      email: '',
+      batch: batches?.[0] || '',
+      semester: defaultSem,
+    }
+    if (type === 'finance') return { title: '', category: 'Income', amount: '', date: '', status: 'Completed', receiptUrl: '' }
     if (type === 'adminUser') return {
-      name: initialItem?.name || '',
-      email: initialItem?.email || '',
-      role: initialItem?.role || 'Department',
-      password: initialItem?.password || (initialItem?.tokenHash ? atob(initialItem.tokenHash) : ''),
-      permissions: initialItem?.permissions || '',
-      isPrimary: initialItem?.isPrimary || false,
+      name: '',
+      email: '',
+      role: 'Department',
+      password: '',
+      permissions: '',
+      isPrimary: false,
     }
     return {}
   })
@@ -85,8 +118,8 @@ export function AdminFormModal({
       return
     }
     const newMod = {
-      unit: 'Open Ended Module: Self-Learning & Emerging Trends',
-      desc: 'Exploratory mini-project, case study, or research analysis on emerging industry technologies.',
+      unit: 'Open Ended Module',
+      desc: '',
       isOpenEnded: true,
     }
     setFormData((prev) => ({
@@ -99,8 +132,8 @@ export function AdminFormModal({
     const existing = formData.modules || []
     const newIdx = existing.length + 1
     const newMod = {
-      unit: `Unit ${newIdx}: Advanced Topics`,
-      desc: 'Core methodologies, algorithms, and practical implementations.',
+      unit: `Unit ${newIdx}`,
+      desc: '',
       isOpenEnded: false,
     }
     setFormData((prev) => ({
@@ -223,6 +256,26 @@ export function AdminFormModal({
               <div className="admin-form-field">
                 <label>Description / Message</label>
                 <textarea required value={formData.description} onChange={(e) => handleChange('description', e.target.value)} placeholder="Association desk description..." />
+              </div>
+              <div className="admin-form-row" style={{ marginTop: '10px' }}>
+                <div className="admin-form-field">
+                  <label>Secretary's Annual Magazine Title (Optional)</label>
+                  <input
+                    value={formData.magazineTitle || ''}
+                    onChange={(e) => handleChange('magazineTitle', e.target.value)}
+                    placeholder="e.g. INFOTRAIL 2026"
+                  />
+                </div>
+                <div className="admin-form-field">
+                  <ImageKitUploader
+                    label="Magazine PDF Document (Optional)"
+                    folder="/bca_portal/magazines"
+                    accept=".pdf,image/*"
+                    value={formData.magazineUrl || ''}
+                    onChange={(url) => handleChange('magazineUrl', url)}
+                    placeholder="Upload annual magazine file"
+                  />
+                </div>
               </div>
               <div className="admin-form-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="activeAssoc" checked={Boolean(formData.active)} onChange={(e) => handleChange('active', e.target.checked)} />
@@ -462,19 +515,44 @@ export function AdminFormModal({
             </>
           )}
 
-          {/* REPORT FORM */}
-          {type === 'report' && (
+          {/* REPORT / MAGAZINE FORM */}
+          {(type === 'report' || type === 'magazine') && (
             <>
               <div className="admin-form-field">
+                <label>Belongs to Association & Secretary</label>
+                <select
+                  required
+                  value={formData.associationId || ''}
+                  onChange={(e) => handleChange('associationId', e.target.value)}
+                >
+                  <option value="">-- Select Association Tenure --</option>
+                  {associationsList?.map((assoc) => (
+                    <option key={assoc.id} value={assoc.id}>
+                      {assoc.fromYear}–{assoc.toYear} · {assoc.name} ({assoc.secretaryName || 'Secretary'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-form-field">
                 <label>Document Title</label>
-                <input required value={formData.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. Annual Symposium Report 2026" />
+                <input required value={formData.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. INFOTRAIL 2026 - Annual Magazine" />
               </div>
               <div className="admin-form-row">
                 <div className="admin-form-field">
                   <label>Publication Type</label>
-                  <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)}>
-                    <option value="EVENT REPORT">EVENT REPORT</option>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => {
+                      const newType = e.target.value
+                      setFormData(prev => ({
+                        ...prev,
+                        type: newType,
+                        isMagazine: newType === 'ANNUAL MAGAZINE'
+                      }))
+                    }}
+                  >
                     <option value="ANNUAL MAGAZINE">ANNUAL MAGAZINE</option>
+                    <option value="EVENT REPORT">EVENT REPORT</option>
                     <option value="NEWSLETTER">NEWSLETTER</option>
                   </select>
                 </div>
@@ -485,7 +563,7 @@ export function AdminFormModal({
               </div>
               <div className="admin-form-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="magCheck" checked={Boolean(formData.isMagazine)} onChange={(e) => handleChange('isMagazine', e.target.checked)} />
-                <label htmlFor="magCheck" style={{ margin: 0, cursor: 'pointer' }}>Mark as Annual Magazine / Journal</label>
+                <label htmlFor="magCheck" style={{ margin: 0, cursor: 'pointer' }}>Belongs to Association Secretary as Annual Magazine</label>
               </div>
               <div className="admin-form-field">
                 <ImageKitUploader
@@ -546,16 +624,33 @@ export function AdminFormModal({
             <>
               <div className="admin-form-row">
                 <div className="admin-form-field">
-                  <label>Subject Code</label>
-                  <select value={formData.subject} onChange={(e) => handleChange('subject', e.target.value)}>
-                    {subjectsList?.map((s) => <option key={s.id || s.code} value={s.code}>{s.code} - {s.title}</option>)}
-                    <option value="Common">Common</option>
+                  <label>Semester</label>
+                  <select
+                    value={formData.semester || defaultSem}
+                    onChange={(e) => {
+                      const newSem = e.target.value
+                      const filtered = subjectsList?.filter((s) => (s.semester || 'Sem 1') === newSem) || []
+                      setFormData((prev) => ({
+                        ...prev,
+                        semester: newSem,
+                        subject: filtered[0]?.code || '',
+                      }))
+                    }}
+                  >
+                    {Array.from({ length: 8 }, (_, i) => <option key={i}>Sem {i + 1}</option>)}
                   </select>
                 </div>
                 <div className="admin-form-field">
-                  <label>Semester</label>
-                  <select value={formData.semester} onChange={(e) => handleChange('semester', e.target.value)}>
-                    {Array.from({ length: 8 }, (_, i) => <option key={i}>Sem {i + 1}</option>)}
+                  <label>Subject (for {formData.semester || defaultSem})</label>
+                  <select
+                    required
+                    value={formData.subject}
+                    onChange={(e) => handleChange('subject', e.target.value)}
+                  >
+                    <option value="">-- Select Subject --</option>
+                    {(subjectsList?.filter((s) => (s.semester || 'Sem 1') === (formData.semester || defaultSem)) || []).map((s) => (
+                      <option key={s.id || s.code} value={s.code}>{s.code} · {s.title}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -581,15 +676,33 @@ export function AdminFormModal({
             <>
               <div className="admin-form-row">
                 <div className="admin-form-field">
-                  <label>Subject Code</label>
-                  <select value={formData.subject || subjectsList?.[0]?.code || 'MFC'} onChange={(e) => handleChange('subject', e.target.value)}>
-                    {subjectsList?.map((s) => <option key={s.id || s.code} value={s.code}>{s.code} - {s.title} ({s.semester})</option>)}
+                  <label>Target Semester</label>
+                  <select
+                    value={formData.semester || defaultSem}
+                    onChange={(e) => {
+                      const newSem = e.target.value
+                      const filtered = subjectsList?.filter((s) => (s.semester || 'Sem 1') === newSem) || []
+                      setFormData((prev) => ({
+                        ...prev,
+                        semester: newSem,
+                        subject: filtered[0]?.code || '',
+                      }))
+                    }}
+                  >
+                    {Array.from({ length: 8 }, (_, i) => <option key={i}>Sem {i + 1}</option>)}
                   </select>
                 </div>
                 <div className="admin-form-field">
-                  <label>Target Semester</label>
-                  <select value={formData.semester || defaultSem} onChange={(e) => handleChange('semester', e.target.value)}>
-                    {Array.from({ length: 8 }, (_, i) => <option key={i}>Sem {i + 1}</option>)}
+                  <label>Subject (for {formData.semester || defaultSem})</label>
+                  <select
+                    required
+                    value={formData.subject}
+                    onChange={(e) => handleChange('subject', e.target.value)}
+                  >
+                    <option value="">-- Select Subject --</option>
+                    {(subjectsList?.filter((s) => (s.semester || 'Sem 1') === (formData.semester || defaultSem)) || []).map((s) => (
+                      <option key={s.id || s.code} value={s.code}>{s.code} · {s.title}</option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -48,39 +48,47 @@ export function Department({
           </div>
         </div>
         <div className="faculty-grid">
-          {facultyList.map((person, index) => (
-            <article className={`faculty-card faculty-${(index % 4) + 1}`} key={person.id || person.name}>
-              <div className="faculty-photo">
-                <img src={person.image} alt={person.name} />
-                <span>0{index + 1}</span>
-              </div>
-              <div className="faculty-info">
-                <h3>{person.name}</h3>
-                <p>{person.role}</p>
-                <small>{person.tag}</small>
-                {canManageDept && (
-                  <div style={{ marginTop: '10px', display: 'flex', gap: '6px', borderTop: '1px solid #1e3a5f', paddingTop: '8px' }}>
-                    <button
-                      type="button"
-                      className="btn-admin-edit"
-                      onClick={() => onEditFaculty(person)}
-                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
-                    >
-                      <Icon name="edit" size={11} /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-admin-del"
-                      onClick={() => onDeleteFaculty(person.id, person.name)}
-                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
-                    >
-                      <Icon name="trash" size={11} /> Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
+          {facultyList.length > 0 ? (
+            facultyList.map((person, index) => (
+              <article className={`faculty-card faculty-${(index % 4) + 1}`} key={person.id || person.name}>
+                <div className="faculty-photo">
+                  <img src={person.image} alt={person.name} />
+                  <span>0{index + 1}</span>
+                </div>
+                <div className="faculty-info">
+                  <h3>{person.name}</h3>
+                  <p>{person.role}</p>
+                  <small>{person.tag}</small>
+                  {canManageDept && (
+                    <div style={{ marginTop: '10px', display: 'flex', gap: '6px', borderTop: '1px solid #1e3a5f', paddingTop: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn-admin-edit"
+                        onClick={() => onEditFaculty(person)}
+                        style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <Icon name="edit" size={11} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-admin-del"
+                        onClick={() => onDeleteFaculty(person.id, person.name)}
+                        style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <Icon name="trash" size={11} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="empty-state-card" style={{ padding: '36px 20px', textAlign: 'center', background: '#081220', border: '1px dashed #1e3a5f', borderRadius: '8px', color: '#94a3b8', gridColumn: '1 / -1' }}>
+              <Icon name="users" size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+              <h4 style={{ color: '#e2e8f0', margin: '0 0 6px' }}>No faculty profiles listed</h4>
+              <p style={{ margin: 0, fontSize: '13px' }}>Faculty members will appear here once added from the Department admin desk.</p>
+            </div>
+          )}
         </div>
       </section>
 

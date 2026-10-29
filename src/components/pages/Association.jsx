@@ -23,17 +23,45 @@ export function ReportRow({ title, type, date, setViewer, magazine }) {
 
 export function Association({
   setViewer,
-  reportsList,
+  reportsList = [],
   associationsList = [],
   selectedAssocId,
   setSelectedAssocId,
   canManageAssoc,
   onOpenAddAssoc,
+  onOpenAddMagazine,
   onOpenFinanceModal,
   canViewFinance,
   financeList = [],
 }) {
   const currentAssoc = associationsList.find((a) => a.id === selectedAssocId) || associationsList[0] || {}
+
+  const currentAssocReports = useMemo(() => {
+    if (!currentAssoc || !currentAssoc.id) return []
+    return reportsList.filter((rep) => {
+      if (rep.associationId) return rep.associationId === currentAssoc.id
+      return Boolean(currentAssoc.active)
+    })
+  }, [reportsList, currentAssoc])
+
+  const secretaryMagazine = useMemo(() => {
+    if (currentAssoc.magazineTitle) {
+      return {
+        title: currentAssoc.magazineTitle,
+        fileUrl: currentAssoc.magazineUrl,
+        date: `${currentAssoc.fromYear}–${currentAssoc.toYear}`,
+      }
+    }
+    const foundMag = currentAssocReports.find((r) => r.isMagazine || r.type === 'ANNUAL MAGAZINE')
+    if (foundMag) {
+      return {
+        title: foundMag.title,
+        fileUrl: foundMag.fileUrl,
+        date: foundMag.date,
+      }
+    }
+    return null
+  }, [currentAssoc, currentAssocReports])
 
   const { totalIncome, totalExpense, balance } = useMemo(() => {
     let inc = 0
@@ -49,6 +77,26 @@ export function Association({
   }, [financeList])
 
   const formatCurr = (num) => '₹' + Math.round(num).toLocaleString('en-IN')
+
+  if (associationsList.length === 0) {
+    return (
+      <div className="page inner-page">
+        <PageIntro
+          eyebrow="Student association"
+          title={<>Lead from the <em>middle.</em></>}
+          copy="The BCA Association turns good ideas into shared experiences — one event, one conversation and one bold experiment at a time."
+        />
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#081220', border: '1px dashed #1e3a5f', borderRadius: '12px', margin: '30px 0' }}>
+          <Icon name="users" size={32} style={{ color: '#06b6d4', marginBottom: '12px' }} />
+          <h3 style={{ color: '#f8fafc', margin: '0 0 8px' }}>No Association Tenures Added Yet</h3>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 18px' }}>Create an association tenure year-to-year to appoint a secretary, upload annual magazines, and manage student reports.</p>
+          {canManageAssoc && (
+            <Button icon="plus" onClick={onOpenAddAssoc}>Add Association Tenure</Button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page inner-page">
@@ -96,33 +144,96 @@ export function Association({
           <h2>“{currentAssoc.quote || 'We make room for everyone.'}”</h2>
           <p>{currentAssoc.description || 'Our association is a shared table: a place for first ideas, half-finished thoughts and the confidence to put them into the world.'}</p>
           <div className="signature">
-            {currentAssoc.secretaryName || 'Aisha Rahman'} <small>{currentAssoc.secretaryRole || `Secretary · ${currentAssoc.fromYear}—${currentAssoc.toYear}`}</small>
+            {currentAssoc.secretaryName || 'Secretary'} <small>{currentAssoc.secretaryRole || `Secretary · ${currentAssoc.fromYear}—${currentAssoc.toYear}`}</small>
           </div>
         </div>
         <div className="secretary-stamp">BCA<br /><span>{currentAssoc.fromYear?.slice(-2) || '02'}</span></div>
       </section>
 
+      {/* Secretary's Annual Magazine Card if present */}
+      {secretaryMagazine && (
+        <section className="secretary-magazine-strip" style={{
+          marginTop: '18px',
+          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(14, 165, 233, 0.03) 100%)',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
+          borderRadius: '8px',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.15)', color: '#38bdf8', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Icon name="book" size={22} />
+            </div>
+            <div>
+              <span className="eyebrow" style={{ color: '#38bdf8', fontSize: '10px', margin: 0 }}>
+                {currentAssoc.name} · Annual Magazine
+              </span>
+              <h4 style={{ margin: '3px 0 2px', fontSize: '15px', color: '#f8fafc' }}>{secretaryMagazine.title}</h4>
+              <small style={{ color: '#94a3b8', fontSize: '11px' }}>
+                Published under tenure of {currentAssoc.secretaryName || 'Association Secretary'} ({currentAssoc.fromYear}–{currentAssoc.toYear})
+              </small>
+            </div>
+          </div>
+          {secretaryMagazine.fileUrl ? (
+            <Button
+              variant="outline"
+              icon="external"
+              onClick={() => setViewer({
+                title: secretaryMagazine.title,
+                kind: 'Annual Magazine',
+                url: secretaryMagazine.fileUrl,
+                date: secretaryMagazine.date
+              })}
+            >
+              Read Magazine
+            </Button>
+          ) : (
+            <span style={{ fontSize: '11px', color: '#64748b' }}>Document in archive</span>
+          )}
+        </section>
+      )}
+
       <section className="reports-section">
         <div className="section-heading">
           <div>
-            <div className="eyebrow"><span className="eyebrow-line" />From the association desk</div>
+            <div className="eyebrow"><span className="eyebrow-line" />From {currentAssoc.name || 'Association'} desk</div>
             <h2>Reports & <span>magazines.</span></h2>
           </div>
-          <Button variant="outline" icon="external" onClick={() => setViewer({ title: 'Association archive', kind: 'All reports & publications', date: `${currentAssoc.fromYear}—${currentAssoc.toYear}` })}>
-            Open archive
-          </Button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {canManageAssoc && currentAssoc?.id && (
+              <Button
+                icon="plus"
+                onClick={() => onOpenAddMagazine && onOpenAddMagazine(currentAssoc.id)}
+              >
+                Add Magazine / Report
+              </Button>
+            )}
+            <Button variant="outline" icon="external" onClick={() => setViewer({ title: `${currentAssoc.name || 'Association'} Archive`, kind: 'All reports & publications', date: `${currentAssoc.fromYear}—${currentAssoc.toYear}` })}>
+              Open archive
+            </Button>
+          </div>
         </div>
         <div className="report-list">
-          {reportsList.map((rep) => (
-            <ReportRow
-              key={rep.id || rep.title}
-              title={rep.title}
-              type={rep.type}
-              date={rep.date}
-              setViewer={setViewer}
-              magazine={rep.isMagazine}
-            />
-          ))}
+          {currentAssocReports.length > 0 ? (
+            currentAssocReports.map((rep) => (
+              <ReportRow
+                key={rep.id || rep.title}
+                title={rep.title}
+                type={rep.type}
+                date={rep.date}
+                setViewer={setViewer}
+                magazine={rep.isMagazine || rep.type?.toLowerCase().includes('magazine')}
+              />
+            ))
+          ) : (
+            <div className="empty-state-card" style={{ padding: '24px', textAlign: 'center', background: '#081220', border: '1px dashed #1e3a5f', borderRadius: '8px', color: '#94a3b8', gridColumn: '1 / -1' }}>
+              <p>No reports or magazines added for {currentAssoc.fromYear}–{currentAssoc.toYear} yet.</p>
+            </div>
+          )}
         </div>
       </section>
     </div>

@@ -82,6 +82,10 @@ export function App() {
     let active = true
     const loadCloudData = async () => {
       try {
+        if (loadStorage('test_data_wiped', false)) {
+          return // Superadmin wiped all test data; do not restore demo collections
+        }
+
         const cloudData = await fetchAllSupabaseData()
         if (!active) return
 
@@ -143,25 +147,17 @@ export function App() {
     return () => { active = false }
   }, [])
 
-  // Dynamic CMS collections
-  const [events, setEvents] = useState(() => loadStorage('events', defaultEvents))
-  const [facultyList, setFacultyList] = useState(() => loadStorage('faculty', defaultFaculty))
-  const [subjectsList, setSubjectsList] = useState(() => {
-    const loaded = loadStorage('subjects', defaultSubjects)
-    if (!Array.isArray(loaded) || loaded.length === 0 || !loaded.some((s) => s.semester === 'Sem 2')) {
-      return defaultSubjects
-    }
-    return loaded
+  // Dynamic CMS collections (respecting test_data_wiped state)
+  const isDataWiped = loadStorage('test_data_wiped', false)
+  const [events, setEvents] = useState(() => isDataWiped ? loadStorage('events', []) : loadStorage('events', defaultEvents))
+  const [facultyList, setFacultyList] = useState(() => isDataWiped ? loadStorage('faculty', []) : loadStorage('faculty', defaultFaculty))
+  const [subjectsList, setSubjectsList] = useState(() => isDataWiped ? loadStorage('subjects', []) : loadStorage('subjects', defaultSubjects))
+  const [associationsList, setAssociationsList] = useState(() => isDataWiped ? loadStorage('associations', []) : loadStorage('associations', defaultAssociations))
+  const [selectedAssocId, setSelectedAssocId] = useState(() => {
+    const list = isDataWiped ? loadStorage('associations', []) : loadStorage('associations', defaultAssociations)
+    return Array.isArray(list) && list[0] ? list[0].id : ''
   })
-  const [associationsList, setAssociationsList] = useState(() => {
-    const loaded = loadStorage('associations', defaultAssociations)
-    if (!Array.isArray(loaded) || loaded.length === 0 || !loaded.some((a) => a.fromYear)) {
-      return defaultAssociations
-    }
-    return loaded
-  })
-  const [selectedAssocId, setSelectedAssocId] = useState(() => defaultAssociations[0]?.id || '')
-  const [reportsList, setReportsList] = useState(() => loadStorage('reports', defaultReports))
+  const [reportsList, setReportsList] = useState(() => isDataWiped ? loadStorage('reports', []) : loadStorage('reports', defaultReports))
   const [clubInfo, setClubInfo] = useState(() => {
     const loaded = loadStorage('club_info', defaultClubInfo)
     if (!loaded || !loaded.name || !loaded.punchline) {
@@ -169,32 +165,14 @@ export function App() {
     }
     return loaded
   })
-  const [clubEventsList, setClubEventsList] = useState(() => loadStorage('club_events', defaultClubEvents))
-  const [galleryList, setGalleryList] = useState(() => loadStorage('gallery', defaultGallery))
-  const [papersList, setPapersList] = useState(() => {
-    const loaded = loadStorage('papers', defaultPapers)
-    if (!Array.isArray(loaded) || loaded.length === 0 || !loaded.some((p) => p.subject === 'DM') || !loaded.some((p) => p.subject === 'COA')) {
-      return defaultPapers
-    }
-    return loaded
-  })
-  const [syllabusList, setSyllabusList] = useState(() => {
-    const loaded = loadStorage('syllabus', defaultSyllabus)
-    if (!Array.isArray(loaded) || loaded.length === 0 || !loaded.some((s) => s.subjectCode === 'DM') || !loaded.some((s) => s.subjectCode === 'DS')) {
-      return defaultSyllabus
-    }
-    return loaded
-  })
-  const [quizList, setQuizList] = useState(() => {
-    const loaded = loadStorage('quiz_questions', defaultQuizQuestions)
-    if (!Array.isArray(loaded) || loaded.length === 0 || !loaded.some((q) => q.subject === 'DM') || !loaded.some((q) => q.subject === 'COA')) {
-      return defaultQuizQuestions
-    }
-    return loaded
-  })
-  const [studentsList, setStudentsList] = useState(() => loadStorage('students', defaultStudents))
-  const [batches, setBatches] = useState(() => loadStorage('batches', defaultBatches))
-  const [financeList, setFinanceList] = useState(() => loadStorage('finance', defaultFinance))
+  const [clubEventsList, setClubEventsList] = useState(() => isDataWiped ? loadStorage('club_events', []) : loadStorage('club_events', defaultClubEvents))
+  const [galleryList, setGalleryList] = useState(() => isDataWiped ? loadStorage('gallery', []) : loadStorage('gallery', defaultGallery))
+  const [papersList, setPapersList] = useState(() => isDataWiped ? loadStorage('papers', []) : loadStorage('papers', defaultPapers))
+  const [syllabusList, setSyllabusList] = useState(() => isDataWiped ? loadStorage('syllabus', []) : loadStorage('syllabus', defaultSyllabus))
+  const [quizList, setQuizList] = useState(() => isDataWiped ? loadStorage('quiz_questions', []) : loadStorage('quiz_questions', defaultQuizQuestions))
+  const [studentsList, setStudentsList] = useState(() => isDataWiped ? loadStorage('students', []) : loadStorage('students', defaultStudents))
+  const [batches, setBatches] = useState(() => isDataWiped ? loadStorage('batches', []) : loadStorage('batches', defaultBatches))
+  const [financeList, setFinanceList] = useState(() => isDataWiped ? loadStorage('finance', []) : loadStorage('finance', defaultFinance))
   const [adminUsersList, setAdminUsersList] = useState(() => getAdminUsersList())
   const [visiblePages, setVisiblePages] = useState(() => loadStorage('visible_pages', navItems.map((item) => item.id)))
   const [galleryFilter, setGalleryFilter] = useState('All')
@@ -284,6 +262,19 @@ export function App() {
             year_label: `${item.fromYear}–${item.toYear}`,
             start_year: parseInt(item.fromYear) || 2026,
             end_year: parseInt(item.toYear) || 2027,
+          })
+        }
+      } else if (type === 'report' || type === 'magazine') {
+        if (isDelete) {
+          await supabase.from('association_reports').delete().eq('id', item.id)
+        } else {
+          await supabase.from('association_reports').upsert({
+            title: item.title,
+            type: item.type,
+            date: item.date,
+            file_url: item.fileUrl || '',
+            is_magazine: Boolean(item.isMagazine || item.type === 'ANNUAL MAGAZINE'),
+            association_id: item.associationId || null,
           })
         }
       } else if (type === 'gallery') {
@@ -382,7 +373,7 @@ export function App() {
       setAssociationsList(updated)
       saveStorage('associations', updated)
       if (finalItem.active) setSelectedAssocId(finalItem.id)
-    } else if (type === 'report') {
+    } else if (type === 'report' || type === 'magazine') {
       const updated = reportsList.some((i) => i.id === id) ? reportsList.map((i) => (i.id === id ? finalItem : i)) : [finalItem, ...reportsList]
       setReportsList(updated)
       saveStorage('reports', updated)
@@ -426,6 +417,8 @@ export function App() {
       saveAdminUsersList(updated)
     }
 
+    saveStorage('test_data_wiped', false)
+
     // Background sync to Supabase database
     syncItemToSupabase(type, finalItem)
 
@@ -447,7 +440,12 @@ export function App() {
       setAssociationsList(updated)
       saveStorage('associations', updated)
       if (selectedAssocId === id && updated.length > 0) setSelectedAssocId(updated[0].id)
-    } else if (type === 'report') {
+
+      // Cascade delete reports/magazines belonging to this association
+      const updatedReports = reportsList.filter((r) => r.associationId !== id)
+      setReportsList(updatedReports)
+      saveStorage('reports', updatedReports)
+    } else if (type === 'report' || type === 'magazine') {
       const updated = reportsList.filter((i) => i.id !== id)
       setReportsList(updated)
       saveStorage('reports', updated)
@@ -456,9 +454,37 @@ export function App() {
       setClubEventsList(updated)
       saveStorage('club_events', updated)
     } else if (type === 'subject') {
-      const updated = subjectsList.filter((i) => i.id !== id)
-      setSubjectsList(updated)
-      saveStorage('subjects', updated)
+      const subjectToDelete = subjectsList.find((i) => i.id === id)
+      const subCode = subjectToDelete?.code
+
+      // 1. Remove subject from subjectsList
+      const updatedSubjects = subjectsList.filter((i) => i.id !== id)
+      setSubjectsList(updatedSubjects)
+      saveStorage('subjects', updatedSubjects)
+
+      // 2. Cascade delete all syllabus, papers, and quizzes belonging to this subject
+      if (subCode) {
+        const updatedSyllabus = syllabusList.filter((s) => s.subjectCode !== subCode)
+        setSyllabusList(updatedSyllabus)
+        saveStorage('syllabus', updatedSyllabus)
+
+        const updatedPapers = papersList.filter((p) => p.subject !== subCode)
+        setPapersList(updatedPapers)
+        saveStorage('papers', updatedPapers)
+
+        const updatedQuiz = quizList.filter((q) => q.subject !== subCode)
+        setQuizList(updatedQuiz)
+        saveStorage('quiz_questions', updatedQuiz)
+
+        if (selectedSubject === subCode) {
+          setSelectedSubject(updatedSubjects[0]?.code || '')
+        }
+
+        try {
+          supabase.from('study_materials').delete().eq('subject', subCode)
+          supabase.from('quizzes').delete().eq('subject', subCode)
+        } catch (e) {}
+      }
     } else if (type === 'syllabus') {
       const updated = syllabusList.filter((i) => i.id !== id)
       setSyllabusList(updated)
@@ -497,11 +523,15 @@ export function App() {
 
   const handleDeleteItem = (type, id, label) => {
     const typeLabel = type.charAt(0).toUpperCase() + type.slice(1)
+    let warningMsg = `Are you sure you want to delete this ${typeLabel.toLowerCase()}? This record will be permanently deleted from the website and cannot be undone.`
+    if (type === 'subject') {
+      warningMsg = `Are you sure you want to delete subject "${label}"? This will permanently delete this subject along with ALL its semester syllabus modules, previous year question papers, and practice quizzes. This action cannot be undone.`
+    }
     setDeleteConfirm({
       title: `Delete ${typeLabel}`,
       itemType: typeLabel,
       itemName: label || id,
-      warning: `Are you sure you want to delete this ${typeLabel.toLowerCase()}? This record will be permanently deleted from the website and cannot be undone.`,
+      warning: warningMsg,
       confirmText: `Yes, Delete`,
       onConfirm: () => {
         executeDeleteItem(type, id)
@@ -533,34 +563,75 @@ export function App() {
     showToast('Club details updated successfully')
   }
 
-  const executeResetDefaults = () => {
-    localStorage.clear()
-    setEvents(defaultEvents)
-    setFacultyList(defaultFaculty)
-    setSubjectsList(defaultSubjects)
-    setAssociationsList(defaultAssociations)
-    setSelectedAssocId(defaultAssociations[0]?.id || '')
-    setReportsList(defaultReports)
-    setClubInfo(defaultClubInfo)
-    setClubEventsList(defaultClubEvents)
-    setGalleryList(defaultGallery)
-    setPapersList(defaultPapers)
-    setSyllabusList(defaultSyllabus)
-    setQuizList(defaultQuizQuestions)
-    setStudentsList(defaultStudents)
-    setBatches(defaultBatches)
-    setFinanceList(defaultFinance)
-    setVisiblePages(navItems.map((item) => item.id))
-    showToast('All collections restored to initial defaults')
+  const executeResetDefaults = async () => {
+    saveStorage('test_data_wiped', true)
+
+    setEvents([])
+    saveStorage('events', [])
+
+    setFacultyList([])
+    saveStorage('faculty', [])
+
+    setSubjectsList([])
+    saveStorage('subjects', [])
+
+    setAssociationsList([])
+    saveStorage('associations', [])
+    setSelectedAssocId('')
+
+    setReportsList([])
+    saveStorage('reports', [])
+
+    setClubEventsList([])
+    saveStorage('club_events', [])
+
+    setGalleryList([])
+    saveStorage('gallery', [])
+
+    setPapersList([])
+    saveStorage('papers', [])
+
+    setSyllabusList([])
+    saveStorage('syllabus', [])
+
+    setQuizList([])
+    saveStorage('quiz_questions', [])
+
+    setStudentsList([])
+    saveStorage('students', [])
+
+    setBatches([])
+    saveStorage('batches', [])
+
+    setFinanceList([])
+    saveStorage('finance', [])
+
+    // Delete test rows from Supabase cloud database
+    try {
+      await Promise.allSettled([
+        supabase.from('faculty').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('associations').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('association_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('club_events').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('gallery_items').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('study_materials').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('quizzes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('student_batches').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+      ])
+    } catch (e) {}
+
+    showToast('All test data has been deleted from the website')
   }
 
   const handleResetDefaults = () => {
     setDeleteConfirm({
-      title: 'Reset All Collections',
-      itemType: 'System Reset',
-      itemName: 'All Custom Portal Records',
-      warning: 'WARNING: This will wipe all custom additions and reset all events, faculty, associations, syllabus, papers, quiz, gallery, students, and finances back to initial demo data. This cannot be undone.',
-      confirmText: 'Yes, Reset All Data',
+      title: 'Delete All Test Data',
+      itemType: 'Test Data Wipe',
+      itemName: 'All Website Test & Demo Records',
+      warning: 'WARNING: Are you sure you want to delete all test data from the website? This will permanently wipe all demo events, faculty members, associations, reports & magazines, semester syllabi, question papers, quizzes, gallery photos, students, and finances so you can start with a clean website. This action cannot be undone.',
+      confirmText: 'Yes, Delete All Test Data',
       onConfirm: () => {
         executeResetDefaults()
         setDeleteConfirm(null)
@@ -622,6 +693,7 @@ export function App() {
             setSelectedAssocId={setSelectedAssocId}
             canManageAssoc={canManageAssoc}
             onOpenAddAssoc={() => setModalForm({ open: true, type: 'association', item: null })}
+            onOpenAddMagazine={(assocId) => setModalForm({ open: true, type: 'report', item: { associationId: assocId, isMagazine: true, type: 'ANNUAL MAGAZINE' } })}
             onOpenFinanceModal={() => setFinanceViewerOpen(true)}
             canViewFinance={canViewFinance}
             financeList={financeList}
@@ -736,6 +808,7 @@ export function App() {
           onSave={(itemData) => handleSaveItem(modalForm.type, itemData)}
           batches={batches}
           subjectsList={subjectsList}
+          associationsList={associationsList}
           semester={semester}
         />
       )}

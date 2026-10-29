@@ -60,19 +60,25 @@ export function Dashboard({ goTo, setViewer, events }) {
           <button className="text-link" onClick={() => goTo('association')}>See all events <Icon name="arrow" size={16} /></button>
         </div>
         <div className="event-grid">
-          {events.map((event) => (
-            <article className={`event-card event-${event.color || 'orange'}`} key={event.id || event.title}>
-              <div className="event-date">
-                <strong>{event.date}</strong>
-                <span>{event.month}</span>
-              </div>
-              <div>
-                <h3>{event.title}</h3>
-                <p>{event.meta}</p>
-              </div>
-              <span className="event-arrow"><Icon name="arrow" size={17} /></span>
-            </article>
-          ))}
+          {events.length > 0 ? (
+            events.map((event) => (
+              <article className={`event-card event-${event.color || 'orange'}`} key={event.id || event.title}>
+                <div className="event-date">
+                  <strong>{event.date}</strong>
+                  <span>{event.month}</span>
+                </div>
+                <div>
+                  <h3>{event.title}</h3>
+                  <p>{event.meta}</p>
+                </div>
+                <span className="event-arrow"><Icon name="arrow" size={17} /></span>
+              </article>
+            ))
+          ) : (
+            <div className="empty-state-card" style={{ padding: '30px 20px', textAlign: 'center', background: '#081220', border: '1px dashed #1e3a5f', borderRadius: '8px', color: '#94a3b8', gridColumn: '1 / -1' }}>
+              <p style={{ margin: 0, fontSize: '14px' }}>No upcoming events scheduled right now.</p>
+            </div>
+          )}
         </div>
       </section>
 
