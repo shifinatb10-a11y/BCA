@@ -17,8 +17,9 @@ export function ImageKitUploader({
   const fileInputRef = useRef(null)
 
   const isConfigured = isImageKitConfigured()
-  const isImage = value && (value.match(/\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i) || value.includes('/tr:') || !value.includes('.pdf'))
   const isPdf = value && value.toLowerCase().includes('.pdf')
+  const isVideo = value && (value.match(/\.(mp4|webm|mov|ogg|m4v)($|\?)/i) || value.toLowerCase().includes('video'))
+  const isImage = value && !isPdf && !isVideo && (value.match(/\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i) || value.includes('/tr:') || !value.includes('.pdf'))
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]
@@ -185,6 +186,11 @@ export function ImageKitUploader({
                     style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #06b6d4' }}
                     onError={(e) => { e.currentTarget.style.display = 'none' }}
                   />
+                )}
+                {isVideo && (
+                  <div style={{ width: '32px', height: '32px', borderRadius: '4px', background: 'rgba(6,182,212,0.2)', border: '1px solid #06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                    ▶
+                  </div>
                 )}
                 {isPdf && (
                   <div style={{ width: '32px', height: '32px', borderRadius: '4px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}>

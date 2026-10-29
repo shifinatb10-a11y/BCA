@@ -283,12 +283,13 @@ export function App() {
           })
         }
       } else if (type === 'gallery') {
+        const isVideoItem = item.mediaType === 'video' || /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(item.image || '')
         if (isDelete) {
           await supabase.from('gallery_items').delete().eq('id', item.id)
         } else {
           await supabase.from('gallery_items').upsert({
             title: item.title,
-            media_type: 'image',
+            media_type: isVideoItem ? 'video' : 'image',
             url: item.image,
             thumbnail_url: item.image,
           })
@@ -403,6 +404,8 @@ export function App() {
       setQuizList(updated)
       saveStorage('quiz_questions', updated)
     } else if (type === 'gallery') {
+      const isVideoItem = finalItem.mediaType === 'video' || /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(finalItem.image || '')
+      finalItem.mediaType = isVideoItem ? 'video' : 'image'
       const updated = galleryList.some((i) => i.id === id) ? galleryList.map((i) => (i.id === id ? finalItem : i)) : [finalItem, ...galleryList]
       setGalleryList(updated)
       saveStorage('gallery', updated)
@@ -569,6 +572,11 @@ export function App() {
   }
 
   const executeResetDefaults = async () => {
+    if (normalizeRole(session?.role) !== 'Super admin') {
+      showToast('Unauthorized: Only Super admin can delete test data.')
+      return
+    }
+
     saveStorage('test_data_wiped', true)
 
     setEvents([])
@@ -632,6 +640,11 @@ export function App() {
   }
 
   const handleResetDefaults = () => {
+    if (normalizeRole(session?.role) !== 'Super admin') {
+      showToast('Unauthorized: Only Super admin can delete test data.')
+      return
+    }
+
     setDeleteConfirm({
       title: 'Delete All Test Data',
       itemType: 'Test Data Wipe',

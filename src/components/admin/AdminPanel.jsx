@@ -149,11 +149,15 @@ export function AdminPanel({
 
         <div className="admin-panel-bottom">
           {isSuper && (
-            <button onClick={onResetDefaults} title="Delete all test data from website">
+            <button
+              className="admin-delete-data-btn"
+              onClick={onResetDefaults}
+              title="Delete all test data from website"
+            >
               <Icon name="trash" size={16} /> Delete test data
             </button>
           )}
-          <button onClick={onLogout} title="Sign out from portal">
+          <button className="admin-signout-btn" onClick={onLogout} title="Sign out from portal">
             <Icon name="arrow" size={16} /> Sign out
           </button>
         </div>
@@ -690,30 +694,40 @@ export function AdminPanel({
             <div className="admin-crud-header">
               <div>
                 <h3><Icon name="image" size={19} /> Gallery Moments <span className="admin-count-pill">{galleryList.length}</span></h3>
-                <p>Photos and moments displayed in the living campus archive.</p>
+                <p>Photos and video moments displayed in the living campus archive.</p>
               </div>
-              <Button onClick={() => onOpenModal('gallery', null)} icon="plus">Add Gallery Photo</Button>
+              <Button onClick={() => onOpenModal('gallery', null)} icon="plus">Add Photo / Video</Button>
             </div>
             <div className="admin-crud-list">
-              {galleryList.map((gal) => (
-                <div className="admin-item-row" key={gal.id}>
-                  <div className="admin-item-main">
-                    <img
-                      className="admin-item-avatar"
-                      src={gal.image.startsWith('http') ? gal.image : asset(gal.image)}
-                      alt={gal.title}
-                    />
-                    <div className="admin-item-details">
-                      <strong>{gal.title}</strong>
-                      <small>Category: {gal.type} · Source: {gal.image}</small>
+              {galleryList.map((gal) => {
+                const isVid = gal.mediaType === 'video' || /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(gal.image || gal.url || '')
+                return (
+                  <div className="admin-item-row" key={gal.id}>
+                    <div className="admin-item-main">
+                      {isVid ? (
+                        <div className="admin-item-avatar-video" title="Video media">
+                          ▶
+                        </div>
+                      ) : (
+                        <img
+                          className="admin-item-avatar"
+                          src={gal.image.startsWith('http') ? gal.image : asset(gal.image)}
+                          alt={gal.title}
+                          onError={(e) => { e.currentTarget.src = asset('college-logo.png') }}
+                        />
+                      )}
+                      <div className="admin-item-details">
+                        <strong>{gal.title}</strong>
+                        <small>{isVid ? '📹 Video' : '📷 Photo'} · Category: {gal.type} · Source: {gal.image}</small>
+                      </div>
+                    </div>
+                    <div className="admin-actions-cell">
+                      <button className="btn-admin-edit" onClick={() => onOpenModal('gallery', gal)}><Icon name="edit" size={13} /> Edit</button>
+                      <button className="btn-admin-del" onClick={() => onDeleteItem('gallery', gal.id, gal.title)}><Icon name="trash" size={13} /> Delete</button>
                     </div>
                   </div>
-                  <div className="admin-actions-cell">
-                    <button className="btn-admin-edit" onClick={() => onOpenModal('gallery', gal)}><Icon name="edit" size={13} /> Edit</button>
-                    <button className="btn-admin-del" onClick={() => onDeleteItem('gallery', gal.id, gal.title)}><Icon name="trash" size={13} /> Delete</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

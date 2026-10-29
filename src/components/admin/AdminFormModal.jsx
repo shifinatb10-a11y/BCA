@@ -77,7 +77,15 @@ export function AdminFormModal({
         semester: defaultSem,
       }
     }
-    if (type === 'gallery') return { title: '', type: 'Campus', image: '' }
+    if (type === 'gallery') {
+      const isVid = initialItem?.mediaType === 'video' || /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(initialItem?.image || '')
+      return {
+        title: initialItem?.title || '',
+        type: initialItem?.type || 'Campus',
+        mediaType: isVid ? 'video' : 'image',
+        image: initialItem?.image || '',
+      }
+    }
     if (type === 'student') return {
       rollNo: '',
       name: '',
@@ -741,24 +749,45 @@ export function AdminFormModal({
           {type === 'gallery' && (
             <>
               <div className="admin-form-field">
-                <label>Photo Caption / Title</label>
+                <label>Media Caption / Title</label>
                 <input required value={formData.title} onChange={(e) => handleChange('title', e.target.value)} placeholder="e.g. Coding Marathon in Lab 1" />
               </div>
-              <div className="admin-form-field">
-                <label>Category</label>
-                <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)}>
-                  <option value="Campus">Campus</option>
-                  <option value="Events">Events</option>
-                  <option value="Identity">Identity</option>
-                </select>
+              <div className="admin-form-row">
+                <div className="admin-form-field">
+                  <label>Media Type</label>
+                  <select
+                    value={formData.mediaType || 'image'}
+                    onChange={(e) => {
+                      const newType = e.target.value
+                      handleChange('mediaType', newType)
+                    }}
+                  >
+                    <option value="image">📷 Photo / Image</option>
+                    <option value="video">📹 Video (MP4 / WebM / ImageKit Video)</option>
+                  </select>
+                </div>
+                <div className="admin-form-field">
+                  <label>Category</label>
+                  <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)}>
+                    <option value="Campus">Campus</option>
+                    <option value="Events">Events</option>
+                    <option value="Identity">Identity</option>
+                  </select>
+                </div>
               </div>
               <div className="admin-form-field">
                 <ImageKitUploader
-                  label="Gallery Photo / Media"
+                  label={formData.mediaType === 'video' ? 'Upload Video to ImageKit CDN' : 'Upload Gallery Photo'}
                   folder="/bca_portal/gallery"
+                  accept={formData.mediaType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime' : 'image/*'}
                   value={formData.image}
-                  onChange={(url) => handleChange('image', url)}
-                  placeholder="https://ik.imagekit.io/... or upload photo"
+                  onChange={(url) => {
+                    handleChange('image', url)
+                    if (/\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(url)) {
+                      handleChange('mediaType', 'video')
+                    }
+                  }}
+                  placeholder={formData.mediaType === 'video' ? 'https://ik.imagekit.io/.../video.mp4 or upload video' : 'https://ik.imagekit.io/... or upload photo'}
                 />
               </div>
             </>

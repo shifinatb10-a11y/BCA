@@ -4,13 +4,26 @@ import { Button } from '../common/Button'
 export function ViewerModal({ item, onClose }) {
   if (!item) return null
 
-  const fileUrl = item.fileUrl || item.url || (item.image && item.image.startsWith('http') ? item.image : '')
+  const fileUrl = item.fileUrl || item.video || item.url || (item.image && item.image.startsWith('http') ? item.image : '')
   const isPdf = fileUrl && fileUrl.toLowerCase().includes('.pdf')
+  const isVideo = item.mediaType === 'video' || (fileUrl && /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(fileUrl))
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="viewer-modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: isPdf ? '800px' : '560px' }}>
-        {item.image && !isPdf && <img src={item.image} alt={item.title} />}
+      <div className="viewer-modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: isPdf || isVideo ? '760px' : '560px' }}>
+        {item.image && !isPdf && !isVideo && <img src={item.image} alt={item.title} />}
+
+        {isVideo && (
+          <div style={{ width: '100%', maxHeight: '480px', background: '#000', borderBottom: '1px solid #1e3a5f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <video
+              src={fileUrl}
+              controls
+              autoPlay
+              playsInline
+              style={{ width: '100%', maxHeight: '480px', objectFit: 'contain' }}
+            />
+          </div>
+        )}
 
         {isPdf && (
           <div style={{ width: '100%', height: '420px', background: '#090f1f', borderBottom: '1px solid #1e3a5f' }}>
@@ -24,7 +37,7 @@ export function ViewerModal({ item, onClose }) {
 
         <div className="viewer-copy">
           <div>
-            <span className="eyebrow"><span className="eyebrow-line" />{item.kind || 'Document'}</span>
+            <span className="eyebrow"><span className="eyebrow-line" />{item.kind || (isVideo ? 'Campus Video' : 'Document')}</span>
             <h2>{item.title}</h2>
             <p>{item.date || 'PSMO College · BCA Department'}</p>
           </div>
@@ -53,7 +66,7 @@ export function ViewerModal({ item, onClose }) {
                 gap: '8px',
               }}
             >
-              <Icon name="external" size={15} /> Open Document in Full View
+              <Icon name="external" size={15} /> {isVideo ? 'Open Video in Full Tab' : isPdf ? 'Open Document in Full View' : 'Open Media in Full Tab'}
             </a>
             <Button variant="outline" onClick={onClose}>Close preview</Button>
           </div>
