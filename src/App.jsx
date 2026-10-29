@@ -68,7 +68,12 @@ export function App() {
   })
   const [toast, setToast] = useState('')
   const [semester, setSemester] = useState('Sem 1')
-  const [selectedSubject, setSelectedSubject] = useState('MFC')
+  const [selectedSubject, setSelectedSubject] = useState(() => {
+    if (loadStorage('test_data_wiped', false)) return ''
+    const subs = loadStorage('subjects', defaultSubjects)
+    const sem1 = Array.isArray(subs) ? subs.filter((s) => (s.semester || 'Sem 1') === 'Sem 1') : []
+    return sem1[0]?.code || (Array.isArray(subs) && subs[0]?.code) || ''
+  })
   const [quizStarted, setQuizStarted] = useState(false)
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [quizAnswers, setQuizAnswers] = useState({})
@@ -574,6 +579,7 @@ export function App() {
 
     setSubjectsList([])
     saveStorage('subjects', [])
+    setSelectedSubject('')
 
     setAssociationsList([])
     saveStorage('associations', [])

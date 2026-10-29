@@ -580,81 +580,105 @@ export function AdminPanel({
 
             {studySubtab === 'subjects' && (
               <div className="admin-crud-list">
-                {subjectsList.map((sub) => (
-                  <div className="admin-item-row" key={sub.id}>
-                    <div className="admin-item-main">
-                      <span className={`admin-item-badge badge-${sub.tone || 'orange'}`}>{sub.code}</span>
-                      <div className="admin-item-details">
-                        <strong>{sub.title}</strong>
-                        <small>{sub.semester || 'Sem 1'} · Color tone: {sub.tone}</small>
+                {subjectsList.length > 0 ? (
+                  subjectsList.map((sub) => (
+                    <div className="admin-item-row" key={sub.id}>
+                      <div className="admin-item-main">
+                        <span className={`admin-item-badge badge-${sub.tone || 'orange'}`}>{sub.code}</span>
+                        <div className="admin-item-details">
+                          <strong>{sub.title}</strong>
+                          <small>{sub.semester || 'Sem 1'} · Color tone: {sub.tone}</small>
+                        </div>
+                      </div>
+                      <div className="admin-actions-cell">
+                        <button className="btn-admin-edit" onClick={() => onOpenModal('subject', sub)}><Icon name="edit" size={13} /> Edit</button>
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('subject', sub.id, sub.code)}><Icon name="trash" size={13} /> Delete</button>
                       </div>
                     </div>
-                    <div className="admin-actions-cell">
-                      <button className="btn-admin-edit" onClick={() => onOpenModal('subject', sub)}><Icon name="edit" size={13} /> Edit</button>
-                      <button className="btn-admin-del" onClick={() => onDeleteItem('subject', sub.id, sub.code)}><Icon name="trash" size={13} /> Delete</button>
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '13px' }}>No subjects added yet. Click &quot;Add Subject&quot; above to create one.</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
             {studySubtab === 'syllabus' && (
               <div className="admin-crud-list">
-                {syllabusList.map((syl) => (
-                  <div className="admin-item-row" key={syl.id}>
-                    <div className="admin-item-main">
-                      <span className="admin-item-badge badge-cyan">{syl.subjectCode} · {syl.semester}</span>
-                      <div className="admin-item-details">
-                        <strong>{syl.subjectTitle}</strong>
-                        <small>{syl.credits} · {syl.modules?.length || 0} Modules defined</small>
+                {syllabusList.length > 0 ? (
+                  syllabusList.map((syl) => (
+                    <div className="admin-item-row" key={syl.id}>
+                      <div className="admin-item-main">
+                        <span className="admin-item-badge badge-cyan">{syl.subjectCode} · {syl.semester}</span>
+                        <div className="admin-item-details">
+                          <strong>{syl.subjectTitle}</strong>
+                          <small>{syl.credits} · {syl.modules?.length || 0} Modules defined</small>
+                        </div>
+                      </div>
+                      <div className="admin-actions-cell">
+                        <button className="btn-admin-edit" onClick={() => onOpenModal('syllabus', syl)}><Icon name="edit" size={13} /> Edit</button>
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('syllabus', syl.id, `${syl.subjectCode} Syllabus`)}><Icon name="trash" size={13} /> Delete</button>
                       </div>
                     </div>
-                    <div className="admin-actions-cell">
-                      <button className="btn-admin-edit" onClick={() => onOpenModal('syllabus', syl)}><Icon name="edit" size={13} /> Edit</button>
-                      <button className="btn-admin-del" onClick={() => onDeleteItem('syllabus', syl.id, `${syl.subjectCode} Syllabus`)}><Icon name="trash" size={13} /> Delete</button>
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '13px' }}>No syllabus entries uploaded yet.</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
             {studySubtab === 'papers' && (
               <div className="admin-crud-list">
-                {papersList.map((pap) => (
-                  <div className="admin-item-row" key={pap.id}>
-                    <div className="admin-item-main">
-                      <span className="admin-item-badge badge-blue">PDF {pap.year}</span>
-                      <div className="admin-item-details">
-                        <strong>{pap.subject} · {pap.semester || 'Sem 1'}</strong>
-                        <small>Question paper year: {pap.year}</small>
+                {papersList.length > 0 ? (
+                  papersList.map((pap) => (
+                    <div className="admin-item-row" key={pap.id}>
+                      <div className="admin-item-main">
+                        <span className="admin-item-badge badge-blue">PDF {pap.year}</span>
+                        <div className="admin-item-details">
+                          <strong>{pap.subject} · {pap.semester || 'Sem 1'}</strong>
+                          <small>Question paper year: {pap.year}</small>
+                        </div>
+                      </div>
+                      <div className="admin-actions-cell">
+                        <button className="btn-admin-edit" onClick={() => onOpenModal('paper', pap)}><Icon name="edit" size={13} /> Edit</button>
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('paper', pap.id, `${pap.subject} ${pap.year}`)}><Icon name="trash" size={13} /> Delete</button>
                       </div>
                     </div>
-                    <div className="admin-actions-cell">
-                      <button className="btn-admin-edit" onClick={() => onOpenModal('paper', pap)}><Icon name="edit" size={13} /> Edit</button>
-                      <button className="btn-admin-del" onClick={() => onDeleteItem('paper', pap.id, `${pap.subject} ${pap.year}`)}><Icon name="trash" size={13} /> Delete</button>
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '13px' }}>No past question papers uploaded yet.</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
             {studySubtab === 'quizzes' && (
               <div className="admin-crud-list">
-                {quizList.map((q, idx) => (
-                  <div className="admin-item-row" key={q.id || idx}>
-                    <div className="admin-item-main">
-                      <span className="admin-item-badge badge-green">{q.subject || 'MFC'} · {q.semester || 'Sem 1'}</span>
-                      <div className="admin-item-details">
-                        <strong>Q{idx + 1}: {q.text}</strong>
-                        <small>Subject: {q.subject || 'MFC'} ({q.semester || 'Sem 1'}) · Answer: {q.answer}</small>
+                {quizList.length > 0 ? (
+                  quizList.map((q, idx) => (
+                    <div className="admin-item-row" key={q.id || idx}>
+                      <div className="admin-item-main">
+                        <span className="admin-item-badge badge-green">{q.subject || 'Subject'} · {q.semester || 'Sem 1'}</span>
+                        <div className="admin-item-details">
+                          <strong>Q{idx + 1}: {q.text}</strong>
+                          <small>Subject: {q.subject || 'Subject'} ({q.semester || 'Sem 1'}) · Answer: {q.answer}</small>
+                        </div>
+                      </div>
+                      <div className="admin-actions-cell">
+                        <button className="btn-admin-edit" onClick={() => onOpenModal('quiz', q)}><Icon name="edit" size={13} /> Edit</button>
+                        <button className="btn-admin-del" onClick={() => onDeleteItem('quiz', q.id, q.text)}><Icon name="trash" size={13} /> Delete</button>
                       </div>
                     </div>
-                    <div className="admin-actions-cell">
-                      <button className="btn-admin-edit" onClick={() => onOpenModal('quiz', q)}><Icon name="edit" size={13} /> Edit</button>
-                      <button className="btn-admin-del" onClick={() => onDeleteItem('quiz', q.id, q.text)}><Icon name="trash" size={13} /> Delete</button>
-                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '13px' }}>No practice quiz questions added yet.</p>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

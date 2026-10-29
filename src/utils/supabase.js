@@ -199,10 +199,10 @@ export const mapSupabaseStudyMaterials = (rows) => {
     if (isPaper) {
       papers.push({
         id: r.id,
-        subject: r.subject || 'MFC',
+        subject: r.subject || '',
         semester: sem,
         year: r.year ? String(r.year) : '2026',
-        title: r.title || `${r.subject} Question Paper`,
+        title: r.title || `${r.subject || 'Question'} Paper`,
         fileUrl: r.file_url || '',
       })
     } else {
@@ -216,15 +216,15 @@ export const mapSupabaseStudyMaterials = (rows) => {
 
       if (modules.length === 0) {
         modules = [
-          { unit: 'Unit 1: Fundamentals', desc: r.description || 'Core foundational concepts and mathematical structures.' },
-          { unit: 'Unit 2: Applied Techniques', desc: 'Practical methodologies and algorithm implementations.' },
+          { unit: 'Unit 1: Fundamentals', desc: r.description || 'Core foundational concepts.' },
+          { unit: 'Unit 2: Applied Techniques', desc: 'Practical methodologies and implementations.' },
         ]
       }
 
       syllabi.push({
         id: r.id,
-        subjectCode: r.subject || 'MFC',
-        subjectTitle: r.title || 'Mathematical Foundations of Computing',
+        subjectCode: r.subject || '',
+        subjectTitle: r.title || 'Curriculum Syllabus',
         semester: sem,
         credits: '4 Credits · 60 Hours',
         regulation: 'PSMO Autonomous / Calicut University 2026',
@@ -242,7 +242,7 @@ export const mapSupabaseQuizzes = (rows) => {
   const allQuestions = []
   rows.forEach((qObj) => {
     const sem = qObj.semester ? (qObj.semester.toLowerCase().includes('sem') ? qObj.semester.replace(/semester/i, 'Sem').trim() : `Sem ${qObj.semester}`) : 'Sem 1'
-    const subject = qObj.subject || 'MFC'
+    const subject = qObj.subject || ''
 
     if (Array.isArray(qObj.questions)) {
       qObj.questions.forEach((q, idx) => {

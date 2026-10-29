@@ -55,19 +55,29 @@ export function StudyZone({
         setQuizSubmitted(false)
         setQuizAnswers({})
       }
+    } else {
+      if (selectedSubject !== '') {
+        setSelectedSubject('')
+        setQuizStarted(false)
+        setQuizSubmitted(false)
+        setQuizAnswers({})
+      }
     }
   }, [semester, semesterSubjects, selectedSubject, setSelectedSubject, setQuizStarted, setQuizSubmitted, setQuizAnswers])
 
   // Filter syllabus, past papers, and quiz strictly by selectedSubject and semester (does not show others)
   const filteredSyllabus = useMemo(() => {
+    if (!selectedSubject) return []
     return syllabusList.filter((s) => s.subjectCode === selectedSubject && ((s.semester || 'Sem 1') === semester))
   }, [syllabusList, selectedSubject, semester])
 
   const filteredPapers = useMemo(() => {
+    if (!selectedSubject) return []
     return papersList.filter((p) => p.subject === selectedSubject && ((p.semester || 'Sem 1') === semester))
   }, [papersList, selectedSubject, semester])
 
   const filteredQuiz = useMemo(() => {
+    if (!selectedSubject) return []
     return quizList.filter((q) => q.subject === selectedSubject && ((q.semester || 'Sem 1') === semester))
   }, [quizList, selectedSubject, semester])
 
@@ -100,7 +110,10 @@ export function StudyZone({
             </select>
             <Icon name="chevron" size={15} />
           </label>
-          <span className="intro-note"><span className="status-dot" /> Showing {semester} · {selectedSubject || 'Subject'}</span>
+          <span className="intro-note">
+            <span className="status-dot" style={{ background: activeSubjectObj ? '#22c55e' : '#64748b' }} />
+            {activeSubjectObj ? `Showing ${semester} · ${activeSubjectObj.code}` : `${semester} · 0 subjects`}
+          </span>
         </div>
       </PageIntro>
 
@@ -139,7 +152,9 @@ export function StudyZone({
         </aside>
 
         <section className="study-main">
-          <div className="study-heading">
+          {activeSubjectObj ? (
+            <>
+              <div className="study-heading">
             <div>
               <span className="eyebrow"><span className="eyebrow-line" />{semester} · {selectedSubject} Academic Hub</span>
               <h2>{selectedSubject} <span>{activeSubjectObj?.title ? `· ${activeSubjectObj.title}` : 'Resources.'}</span></h2>
@@ -303,7 +318,60 @@ export function StudyZone({
               </div>
             )}
           </div>
-        </section>
+        </>
+      ) : (
+        <div
+          className="empty-state-card"
+          style={{
+            padding: '60px 30px',
+            textAlign: 'center',
+            background: '#0a1628',
+            border: '1px dashed #1e3a5f',
+            borderRadius: '12px',
+            color: '#94a3b8',
+            margin: '10px 0',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(6, 182, 212, 0.1)',
+              color: '#38bdf8',
+              display: 'grid',
+              placeItems: 'center',
+              margin: '0 auto 16px',
+            }}
+          >
+            <Icon name="book" size={28} />
+          </div>
+          <h3 style={{ color: '#f8fafc', fontSize: '20px', marginBottom: '8px' }}>
+            {semesterSubjects.length === 0
+              ? `No subjects added for ${semester}`
+              : 'No subject selected'}
+          </h3>
+          <p
+            style={{
+              maxWidth: '460px',
+              margin: '0 auto 20px',
+              fontSize: '13.5px',
+              lineHeight: 1.6,
+              color: '#94a3b8',
+            }}
+          >
+            {semesterSubjects.length === 0
+              ? `There are no academic resources available because no subjects exist in ${semester} yet. Subjects must be added before curriculum syllabus, previous year question papers, and practice tests can be created.`
+              : `Please select a subject from the left panel to access its curriculum syllabus, question papers, and practice tests.`}
+          </p>
+          {canManageStudy && (
+            <Button onClick={onOpenAddSubject} icon="plus">
+              Add subject to {semester}
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
       </div>
 
       {quizStarted && (
