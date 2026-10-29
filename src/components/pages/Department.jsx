@@ -92,21 +92,59 @@ export function Department({
         </div>
       </section>
 
-      <section className="department-highlights">
-        <div>
-          <span className="highlight-tag">01 · PROGRAMME</span>
-          <h3>Four years. Real depth.</h3>
-          <p>Autonomous curriculum structured to bridge academic theory and industry reality.</p>
+      <section className="department-highlights-section">
+        <div className="section-heading">
+          <div>
+            <div className="eyebrow"><span className="eyebrow-line" />Core pillars</div>
+            <h2>Built for <span>depth & discovery.</span></h2>
+          </div>
         </div>
-        <div>
-          <span className="highlight-tag">02 · COMMUNITY</span>
-          <h3>Student-first spaces.</h3>
-          <p>From the BCA Association to the tech club, every initiative is led and shaped by learners.</p>
-        </div>
-        <div>
-          <span className="highlight-tag">03 · OUTCOMES</span>
-          <h3>Beyond the degree.</h3>
-          <p>Graduates move into software engineering, research, and technical leadership across domains.</p>
+
+        <div className="department-highlights-grid">
+          <article className="highlight-card">
+            <div className="highlight-card-top">
+              <div className="highlight-icon-box">
+                <Icon name="book" size={20} />
+              </div>
+              <span className="highlight-tag">01 · PROGRAMME</span>
+            </div>
+            <h3>Four years. <em>Real depth.</em></h3>
+            <p>Autonomous curriculum structured to bridge academic theory and industry reality.</p>
+            <div className="highlight-card-footer">
+              <span>8 Semesters</span>
+              <span>128 Credits</span>
+            </div>
+          </article>
+
+          <article className="highlight-card">
+            <div className="highlight-card-top">
+              <div className="highlight-icon-box">
+                <Icon name="users" size={20} />
+              </div>
+              <span className="highlight-tag">02 · COMMUNITY</span>
+            </div>
+            <h3>Student-first <em>spaces.</em></h3>
+            <p>From the BCA Association to the tech club, every initiative is led and shaped by learners.</p>
+            <div className="highlight-card-footer">
+              <span>BCA Association</span>
+              <span>Tech Club</span>
+            </div>
+          </article>
+
+          <article className="highlight-card">
+            <div className="highlight-card-top">
+              <div className="highlight-icon-box">
+                <Icon name="spark" size={20} />
+              </div>
+              <span className="highlight-tag">03 · OUTCOMES</span>
+            </div>
+            <h3>Beyond the <em>degree.</em></h3>
+            <p>Graduates move into software engineering, research, and technical leadership across domains.</p>
+            <div className="highlight-card-footer">
+              <span>Industry Ready</span>
+              <span>Research & Startups</span>
+            </div>
+          </article>
         </div>
       </section>
     </div>
